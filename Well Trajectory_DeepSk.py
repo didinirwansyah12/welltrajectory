@@ -504,14 +504,14 @@ if st.session_state.results_calculated:
         target_tvd = st.session_state.rkb_elevation - st.session_state.target_depth
         
         # Create two columns with equal width
-        col1, col2 = st.columns(2)  # Two equal width columns
+        col1, col2 = st.columns(2)
         
-        # Common width for both plots (2 units)
+        # Common width for both plots
         plot_width = 6
         
         with col1:
             # 1. Vertical View Plot (1:2 aspect ratio)
-            fig1 = plt.figure(figsize=(plot_width/2, plot_width))  # Width:Height = 1:2
+            fig1 = plt.figure(figsize=(plot_width, plot_width/2))  # Width:Height = 2:1
             ax1 = fig1.add_subplot(111)
             
             ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
@@ -534,29 +534,31 @@ if st.session_state.results_calculated:
             plt.close()
         
         with col2:
-            # 2. Azimuth View Plot (2:2 aspect ratio - Square)
+            # 2. Azimuth View Plot (1:1 aspect ratio) - Menggunakan E+ dan N+
             fig2 = plt.figure(figsize=(plot_width, plot_width))  # Width:Height = 1:1
             ax2 = fig2.add_subplot(111)
             
-            ax2.plot(df_viz['Easting'], df_viz['Northing'], 'b-', linewidth=2, label='Trajectory')
-            ax2.plot(st.session_state.target_easting, st.session_state.target_northing, 
-                    'rx', markersize=10, label='Target')
+            # Plot relatif terhadap surface location (menggunakan N+ dan E+)
+            ax2.plot(df_viz['E+'], df_viz['N+'], 'b-', linewidth=2, label='Trajectory')
             
-            # Calculate boundaries for square plot
-            east_center = (max(df_viz['Easting']) + min(df_viz['Easting'])) / 2
-            north_center = (max(df_viz['Northing']) + min(df_viz['Northing'])) / 2
-            plot_range = max(
-                max(df_viz['Easting']) - min(df_viz['Easting']),
-                max(df_viz['Northing']) - min(df_viz['Northing'])
-            ) * 1.2  # 20% padding
+            # Target point (relatif terhadap surface)
+            target_eplus = st.session_state.target_easting - st.session_state.surface_easting
+            target_nplus = st.session_state.target_northing - st.session_state.surface_northing
+            ax2.plot(target_eplus, target_nplus, 'rx', markersize=10, label='Target')
             
-            ax2.set_xlim(east_center - plot_range/2, east_center + plot_range/2)
-            ax2.set_ylim(north_center - plot_range/2, north_center + plot_range/2)
+            # Calculate boundaries
+            eplus_range = max(df_viz['E+']) - min(df_viz['E+'])
+            nplus_range = max(df_viz['N+']) - min(df_viz['N+'])
+            max_range = max(eplus_range, nplus_range, 
+                          abs(target_eplus), abs(target_nplus)) * 1.2  # 20% padding
+            
+            ax2.set_xlim(-max_range, max_range)
+            ax2.set_ylim(-max_range, max_range)
             ax2.set_aspect('equal')
             
-            ax2.set_xlabel('Easting (m)', fontsize=10, fontweight='bold')
-            ax2.set_ylabel('Northing (m)', fontsize=10, fontweight='bold')
-            ax2.set_title('AZIMUTH VIEW (1:1 Ratio)', fontsize=12, fontweight='bold')
+            ax2.set_xlabel('Easting Relative to Surface (E+)', fontsize=10, fontweight='bold')
+            ax2.set_ylabel('Northing Relative to Surface (N+)', fontsize=10, fontweight='bold')
+            ax2.set_title('AZIMUTH VIEW (1:1 Ratio - Relative Coordinates)', fontsize=12, fontweight='bold')
             ax2.grid(True, linestyle=':', alpha=0.5)
             ax2.legend(loc='upper right', fontsize=9)
             
