@@ -4,6 +4,63 @@ import numpy as np
 from math import sin, cos, tan, radians, degrees, sqrt, atan2, acos
 import pyperclip
 
+# 1. Tambahkan komponen JavaScript di awal
+def add_copy_functionality():
+    js_code = """
+    <script>
+    // Fungsi untuk copy tabel ke clipboard
+    function copyTableToClipboard(tableId, buttonId) {
+        // Select seluruh tabel
+        const table = document.getElementById(tableId);
+        let range = document.createRange();
+        range.selectNode(table);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        
+        // Eksekusi copy
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                // Beri feedback visual
+                const button = document.getElementById(buttonId);
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            }
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+        }
+        
+        window.getSelection().removeAllRanges();
+    }
+    
+    // Tambahkan event listener ke semua tombol copy
+    document.addEventListener('DOMContentLoaded', function() {
+        // Untuk summary table
+        const summaryBtn = document.getElementById('copy-summary-btn');
+        if (summaryBtn) {
+            summaryBtn.onclick = function() {
+                copyTableToClipboard('summary-table', 'copy-summary-btn');
+            };
+        }
+        
+        // Untuk detailed table
+        const detailedBtn = document.getElementById('copy-detailed-btn');
+        if (detailedBtn) {
+            detailedBtn.onclick = function() {
+                copyTableToClipboard('detailed-table', 'copy-detailed-btn');
+            };
+        }
+    });
+    </script>
+    """
+    st.components.v1.html(js_code, height=0)
+
+# Panggil fungsi di awal aplikasi
+add_copy_functionality()
+
 # Helper functions
 def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
     """Calculate dogleg angle between two survey stations"""
@@ -409,37 +466,74 @@ if st.session_state.results_calculated:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
    if st.session_state.results_calculated:
-    # ... [kode sebelumnya tetap sama sampai display tabel] ...
+    # Trajectory Results Summary
+    st.header("Trajectory Results Summary")
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        if st.session_state.distance_to_target <= 1.0:
+            st.markdown(f"**Distance to target = <span class='distance-good'>{st.session_state.distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
+        else:
+            st.markdown(f"**Distance to target = <span class='distance-bad'>{st.session_state.distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
     with col2:
-        csv = st.session_state.summary_df.to_csv(index=False, float_format='%.2f')
-        st.download_button(
-            "📋 Copy Summary",
-            data=csv,
-            file_name="trajectory_summary.csv",
-            mime="text/csv",
-            key="download_summary"
+        # Tombol Copy Summary dengan ID khusus
+        st.button(
+            "📋 Copy Summary", 
+            key="copy_summary",
+            help="Copy all visible table data to clipboard",
+            on_click=None,  # JavaScript akan handle ini
+            id="copy-summary-btn"  # ID untuk JavaScript
         )
     
+    # Tampilkan tabel dengan ID khusus
     st.dataframe(
-        format_dataframe(st.session_state.summary_df),
-        use_container_width=True
+        st.session_state.summary_df.style.format({
+            'MD': '{:,.2f}',
+            'TVD': '{:,.2f}',
+            'Inc': '{:,.2f}',
+            'Azimuth': '{:,.2f}',
+            'N+': '{:,.2f}',
+            'E+': '{:,.2f}',
+            'Northing': '{:,.2f}',
+            'Easting': '{:,.2f}',
+            'Displacement': '{:,.2f}',
+            'TVDSS': '{:,.2f}',
+            'BUR': '{:,.2f}'
+        }),
+        use_container_width=True,
+        height=(len(st.session_state.summary_df) + 1) * 35 + 3,
+        id="summary-table"  # ID untuk JavaScript
     )
     
     # Detailed Survey Results
     st.header("Detailed Survey Results")
     
-    csv = st.session_state.detailed_df.to_csv(index=False, float_format='%.2f')
-    st.download_button(
-        "📋 Copy Detailed",
-        data=csv,
-        file_name="detailed_survey.csv",
-        mime="text/csv",
-        key="download_detailed"
+    # Tombol Copy Detailed dengan ID khusus
+    st.button(
+        "📋 Copy Detailed", 
+        key="copy_detailed",
+        help="Copy all visible table data to clipboard",
+        on_click=None,  # JavaScript akan handle ini
+        id="copy-detailed-btn"  # ID untuk JavaScript
     )
     
+    # Tampilkan tabel dengan ID khusus
     st.dataframe(
-        format_dataframe(st.session_state.detailed_df),
+        st.session_state.detailed_df.style.format({
+            'MD': '{:,.2f}',
+            'TVD': '{:,.2f}',
+            'Inc': '{:,.2f}',
+            'Azimuth': '{:,.2f}',
+            'N+': '{:,.2f}',
+            'E+': '{:,.2f}',
+            'Northing': '{:,.2f}',
+            'Easting': '{:,.2f}',
+            'Displacement': '{:,.2f}',
+            'TVDSS': '{:,.2f}',
+            'BUR': '{:,.2f}'
+        }),
         use_container_width=True,
-        height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
+        height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3),
+        id="detailed-table"  # ID untuk JavaScript
     )
