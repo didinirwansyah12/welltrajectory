@@ -494,6 +494,9 @@ if st.session_state.results_calculated:
     )
 
 
+    if st.session_state.results_calculated:
+    # ... [previous code] ...
+
     # ============== TRAJECTORY VISUALIZATION ==============
     st.header("Trajectory Visualization")
     
@@ -504,18 +507,21 @@ if st.session_state.results_calculated:
                         (st.session_state.target_easting - st.session_state.surface_easting)**2)
         target_tvd = st.session_state.rkb_elevation - st.session_state.target_depth
         
-        # Create two columns with adjusted ratio
-        col1, col2 = st.columns([1, 1])  # Equal width columns
+        # Create two columns with equal width
+        col1, col2 = st.columns(2)  # Two equal width columns
+        
+        # Common width for both plots (2 units)
+        plot_width = 6
         
         with col1:
-            # 1. Vertical View Plot (1:2 aspect ratio - Tall and narrow)
-            fig1 = plt.figure(figsize=(2.5, 5))  # Width:Height = 1:2
+            # 1. Vertical View Plot (1:2 aspect ratio)
+            fig1 = plt.figure(figsize=(plot_width, plot_width/2))  # Width:Height = 2:1
             ax1 = fig1.add_subplot(111)
             
             ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
             ax1.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
             
-            # Set limits with padding
+            # Set limits
             x_padding = max(df_viz['Displacement']) * 0.1
             ax1.set_xlim(-100, max(df_viz['Displacement']) + x_padding)
             
@@ -524,44 +530,43 @@ if st.session_state.results_calculated:
             
             ax1.set_xlabel('Displacement (m)', fontsize=10, fontweight='bold')
             ax1.set_ylabel('TVD (m)', fontsize=10, fontweight='bold')
-            ax1.set_title('VERTICAL VIEW (Scale 1:2)', fontsize=12, fontweight='bold')
+            ax1.set_title('VERTICAL VIEW (1:2 Ratio)', fontsize=12, fontweight='bold')
             ax1.grid(True, linestyle=':', alpha=0.5)
             ax1.legend(loc='upper right', fontsize=9)
-            ax1.tick_params(axis='both', which='major', labelsize=8)
             
             st.pyplot(fig1)
             plt.close()
         
         with col2:
-            # 2. Azimuth View Plot (1:1 aspect ratio - Perfect square)
-            fig2 = plt.figure(figsize=(5, 5))  # Square plot
+            # 2. Azimuth View Plot (2:2 aspect ratio - Square)
+            fig2 = plt.figure(figsize=(plot_width, plot_width))  # Width:Height = 1:1
             ax2 = fig2.add_subplot(111)
             
             ax2.plot(df_viz['Easting'], df_viz['Northing'], 'b-', linewidth=2, label='Trajectory')
             ax2.plot(st.session_state.target_easting, st.session_state.target_northing, 
                     'rx', markersize=10, label='Target')
             
-            # Calculate square plot boundaries
-            east_range = max(df_viz['Easting']) - min(df_viz['Easting'])
-            north_range = max(df_viz['Northing']) - min(df_viz['Northing'])
-            max_range = max(east_range, north_range) * 1.1  # 10% padding
+            # Calculate boundaries for square plot
+            east_center = (max(df_viz['Easting']) + min(df_viz['Easting'])) / 2
+            north_center = (max(df_viz['Northing']) + min(df_viz['Northing'])) / 2
+            plot_range = max(
+                max(df_viz['Easting']) - min(df_viz['Easting']),
+                max(df_viz['Northing']) - min(df_viz['Northing'])
+            ) * 1.2  # 20% padding
             
-            center_east = (max(df_viz['Easting']) + min(df_viz['Easting'])) / 2
-            center_north = (max(df_viz['Northing']) + min(df_viz['Northing'])) / 2
-            
-            ax2.set_xlim(center_east - max_range/2, center_east + max_range/2)
-            ax2.set_ylim(center_north - max_range/2, center_north + max_range/2)
+            ax2.set_xlim(east_center - plot_range/2, east_center + plot_range/2)
+            ax2.set_ylim(north_center - plot_range/2, north_center + plot_range/2)
             ax2.set_aspect('equal')
             
             ax2.set_xlabel('Easting (m)', fontsize=10, fontweight='bold')
             ax2.set_ylabel('Northing (m)', fontsize=10, fontweight='bold')
-            ax2.set_title('AZIMUTH VIEW (Scale 1:1)', fontsize=12, fontweight='bold')
+            ax2.set_title('AZIMUTH VIEW (1:1 Ratio)', fontsize=12, fontweight='bold')
             ax2.grid(True, linestyle=':', alpha=0.5)
             ax2.legend(loc='upper right', fontsize=9)
-            ax2.tick_params(axis='both', which='major', labelsize=8)
             
             st.pyplot(fig2)
             plt.close()
             
     except Exception as e:
         st.error(f"Error creating plots: {str(e)}")
+    
