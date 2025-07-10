@@ -461,6 +461,10 @@ if st.session_state.results_calculated:
 
     # [Di bagian setelah menampilkan tabel Trajectory Results Summary dan sebelum Detailed Survey Results]
 
+        import matplotlib.pyplot as plt
+
+# [Di bagian setelah menampilkan tabel Trajectory Results Summary dan sebelum Detailed Survey Results]
+
 # Section: Visualization
 st.header("Trajectory Visualization")
 
