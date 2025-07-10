@@ -447,6 +447,40 @@ if st.session_state.results_calculated:
         use_container_width=True
     )
     
+    
+    # Detailed Survey Results
+    st.header("Detailed Survey Results")
+    
+    # Add working copy button for detailed table
+    csv = st.session_state.detailed_df.to_csv(index=False)
+    st.download_button(
+        "📋 Copy Detailed",
+        data=csv,
+        file_name="detailed_survey.csv",
+        mime="text/csv",
+        key="download_detailed"
+    )
+    
+    # Display the detailed survey dataframe
+    st.dataframe(
+        st.session_state.detailed_df.style.format({
+            'MD': '{:,.2f}',
+            'TVD': '{:,.2f}',
+            'Inc': '{:,.2f}',
+            'Azimuth': '{:,.2f}',
+            'N+': '{:,.2f}',
+            'E+': '{:,.2f}',
+            'Northing': '{:,.2f}',
+            'Easting': '{:,.2f}',
+            'Displacement': '{:,.2f}',
+            'TVDSS': '{:,.2f}',
+            'BUR': '{:,.2f}'
+        }),
+        use_container_width=True,
+        height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
+    )
+
+
     # ============== TRAJECTORY VISUALIZATION ==============
     st.header("Trajectory Visualization")
     
@@ -499,35 +533,3 @@ if st.session_state.results_calculated:
         
         st.pyplot(fig2)
         plt.close()
-    
-    # Detailed Survey Results
-    st.header("Detailed Survey Results")
-    
-    # Add working copy button for detailed table
-    csv = st.session_state.detailed_df.to_csv(index=False)
-    st.download_button(
-        "📋 Copy Detailed",
-        data=csv,
-        file_name="detailed_survey.csv",
-        mime="text/csv",
-        key="download_detailed"
-    )
-    
-    # Display the detailed survey dataframe
-    st.dataframe(
-        st.session_state.detailed_df.style.format({
-            'MD': '{:,.2f}',
-            'TVD': '{:,.2f}',
-            'Inc': '{:,.2f}',
-            'Azimuth': '{:,.2f}',
-            'N+': '{:,.2f}',
-            'E+': '{:,.2f}',
-            'Northing': '{:,.2f}',
-            'Easting': '{:,.2f}',
-            'Displacement': '{:,.2f}',
-            'TVDSS': '{:,.2f}',
-            'BUR': '{:,.2f}'
-        }),
-        use_container_width=True,
-        height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
-    )
