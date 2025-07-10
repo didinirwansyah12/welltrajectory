@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from math import sin, cos, tan, radians, degrees, sqrt, atan2, acos
-import pyperclip
 import plotly.graph_objects as go
+import io
 
 # Helper functions
 def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
@@ -170,18 +170,26 @@ if st.session_state.results_calculated:
     with col1:
         st.dataframe(st.session_state.summary_df, use_container_width=True)
     with col2:
-        if st.button("📋 Copy Summary"):
-            pyperclip.copy(st.session_state.summary_df.to_csv(index=False))
-            st.success("Summary copied to clipboard!")
+        csv = st.session_state.summary_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="⬇️ Download Summary CSV",
+            data=csv,
+            file_name='summary_table.csv',
+            mime='text/csv'
+        )
 
     st.subheader("Detailed Survey")
     col3, col4 = st.columns([4, 1])
     with col3:
         st.dataframe(st.session_state.detailed_df, use_container_width=True, height=500)
     with col4:
-        if st.button("📋 Copy Detailed"):
-            pyperclip.copy(st.session_state.detailed_df.to_csv(index=False))
-            st.success("Detailed survey copied to clipboard!")
+        csv2 = st.session_state.detailed_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="⬇️ Download Detailed Survey CSV",
+            data=csv2,
+            file_name='detailed_survey.csv',
+            mime='text/csv'
+        )
 
     st.subheader("Trajectory Plots")
     fig1 = go.Figure()
@@ -203,4 +211,3 @@ if st.session_state.results_calculated:
     ))
     fig2.update_layout(title="Profile View (MD vs TVDSS)", xaxis_title="Measured Depth (m)", yaxis_title="TVDSS (m)", height=500, yaxis_autorange='reversed')
     st.plotly_chart(fig2, use_container_width=True)
-
