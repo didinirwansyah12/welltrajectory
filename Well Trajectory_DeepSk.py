@@ -465,25 +465,30 @@ if st.session_state.results_calculated:
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
-   if st.session_state.results_calculated:  # <-- Tambahkan titik dua di sini
+if st.session_state.results_calculated:  # Pastikan ada titik dua
     # Trajectory Results Summary
     st.header("Trajectory Results Summary")
     
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        if st.session_state.distance_to_target <= 1.0:
-            st.markdown(f"**Distance to target = <span class='distance-good'>{st.session_state.distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
-        else:
-            st.markdown(f"**Distance to target = <span class='distance-bad'>{st.session_state.distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
-   
-       with col2:
-        # Tombol Copy Summary dengan ID khusus
-        st.button(
+    col1, col2 = st.columns([3, 1])  # 4 spasi
+    with col1:  # 4 spasi
+        if st.session_state.distance_to_target <= 1.0:  # 8 spasi
+            st.markdown(
+                f"**Distance to target = <span class='distance-good'>"
+                f"{st.session_state.distance_to_target:,.2f} m</span>**",
+                unsafe_allow_html=True
+            )  # 12 spasi
+        else:  # 8 spasi
+            st.markdown(
+                f"**Distance to target = <span class='distance-bad'>"
+                f"{st.session_state.distance_to_target:,.2f} m</span>**",
+                unsafe_allow_html=True
+            )  # 12 spasi
+    
+    with col2:  # 4 spasi
+        st.button(  # 8 spasi
             "📋 Copy Summary", 
             key="copy_summary",
-            help="Copy all visible table data to clipboard",
-            on_click=None,  # JavaScript akan handle ini
-            id="copy-summary-btn"  # ID untuk JavaScript
+            id="copy-summary-btn"
         )
     
     # Tampilkan tabel dengan ID khusus
