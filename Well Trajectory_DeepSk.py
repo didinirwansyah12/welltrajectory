@@ -194,11 +194,7 @@ div[data-testid="stDataFrame"] {
     color: #e74c3c;
     font-weight: bold;
 }
-.copy-button {
-    float: right;
-    margin-top: -40px;
-    margin-right: 10px;
-}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -330,8 +326,7 @@ if st.button("Calculate Trajectory"):
     # Format the output DataFrame with proper number formatting
     st.header("Trajectory Results")
     
-    # Create columns for distance display and copy button
-    col1, col2 = st.columns([3, 1])
+
     
     with col1:
         # Display distance with color coding
@@ -340,11 +335,7 @@ if st.button("Calculate Trajectory"):
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
-    with col2:
-        # Add copy button aligned to top right
-        if st.button("📋 Copy Table", key="copy_button"):
-            df.to_clipboard(index=False)
-            st.success("Table copied to clipboard!")
+
     
     # Create a styled dataframe with consistent number formatting
     styled_df = df.style.format({
