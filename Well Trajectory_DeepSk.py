@@ -465,7 +465,7 @@ if st.session_state.results_calculated:
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
-   if st.session_state.results_calculated:
+   if st.session_state.results_calculated
     # Trajectory Results Summary
     st.header("Trajectory Results Summary")
     
