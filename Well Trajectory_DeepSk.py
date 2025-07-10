@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from math import sin, cos, tan, radians, degrees, sqrt, atan2, acos
-import pyperclip
+import matplotlib.pyplot as plt
 
 # Helper functions
 def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
@@ -458,6 +458,46 @@ if st.session_state.results_calculated:
         }),
         use_container_width=True
     )
+
+    # [Di bagian setelah menampilkan tabel Trajectory Results Summary dan sebelum Detailed Survey Results]
+
+# Section: Visualization
+st.header("Trajectory Visualization")
+
+# Prepare data from detailed survey
+df_viz = st.session_state.detailed_df
+target_point = {
+    'displacement': sqrt((st.session_state.target_northing - st.session_state.surface_northing)**2 + 
+                        (st.session_state.target_easting - st.session_state.surface_easting)**2),
+    'TVD': st.session_state.rkb_elevation - st.session_state.target_depth,
+    'easting': st.session_state.target_easting,
+    'northing': st.session_state.target_northing
+}
+
+# 1. Vertical View Plot
+fig1, ax1 = plt.subplots(figsize=(10, 6))
+ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', label='Trajectory')
+ax1.plot(target_point['displacement'], target_point['TVD'], 'rx', markersize=10, label='Target')
+ax1.set_xlim(-100, max(df_viz['Displacement']) * 1.1)
+ax1.set_xlabel('Displacement (m)')
+ax1.set_ylabel('TVD (m)')
+ax1.set_title('Vertical View')
+ax1.grid(True)
+ax1.legend()
+ax1.invert_yaxis()  # Karena TVD semakin dalam semakin besar
+st.pyplot(fig1)
+
+# 2. Azimuth View Plot
+fig2, ax2 = plt.subplots(figsize=(10, 10))
+ax2.plot(df_viz['Easting'], df_viz['Northing'], 'b-', label='Trajectory')
+ax2.plot(target_point['easting'], target_point['northing'], 'rx', markersize=10, label='Target')
+ax2.set_xlabel('Easting (m)')
+ax2.set_ylabel('Northing (m)')
+ax2.set_title('Azimuth View')
+ax2.grid(True)
+ax2.legend()
+ax2.set_aspect('equal')  # Untuk skala yang sama di x dan y
+st.pyplot(fig2)
     
     # Detailed Survey Results
     st.header("Detailed Survey Results")
