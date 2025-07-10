@@ -411,11 +411,15 @@ if st.session_state.results_calculated:
     with col2:
         # Add working copy button for summary table
         if st.button("📋 Copy Summary", key="copy_summary"):
-            # Store in session state first
-            st.session_state.clipboard_data = st.session_state.summary_df.to_csv(index=False)
-            # Then copy from session state
-            pyperclip.copy(st.session_state.clipboard_data)
-            st.success("Summary table copied to clipboard!")
+           # Replace pyperclip copy with download button
+        csv = st.session_state.summary_df.to_csv(index=False)
+        st.download_button(
+            "📋 Copy Summary",
+            data=csv,
+            file_name="trajectory_summary.csv",
+            mime="text/csv",
+            key="download_summary"
+        )
     
     # Display the styled dataframe
     st.dataframe(
@@ -440,11 +444,15 @@ if st.session_state.results_calculated:
     
     # Add working copy button for detailed table
     if st.button("📋 Copy Detailed", key="copy_detailed"):
-        # Store in session state first
-        st.session_state.clipboard_data = st.session_state.detailed_df.to_csv(index=False)
-        # Then copy from session state
-        pyperclip.copy(st.session_state.clipboard_data)
-        st.success("Detailed table copied to clipboard!")
+    # Replace pyperclip copy with download button
+        csv = st.session_state.detailed_df.to_csv(index=False)
+        st.download_button(
+        "📋 Copy Detailed",
+        data=csv,
+        file_name="detailed_survey.csv",
+        mime="text/csv",
+        key="download_detailed"
+    )
     
     # Display the detailed survey dataframe
     st.dataframe(
