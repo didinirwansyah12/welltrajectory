@@ -465,7 +465,7 @@ if st.session_state.results_calculated:
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
-   if st.session_state.results_calculated
+   if st.session_state.results_calculated:  # <-- Tambahkan titik dua di sini
     # Trajectory Results Summary
     st.header("Trajectory Results Summary")
     
@@ -475,8 +475,8 @@ if st.session_state.results_calculated:
             st.markdown(f"**Distance to target = <span class='distance-good'>{st.session_state.distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{st.session_state.distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
-    
-    with col2:
+   
+       with col2:
         # Tombol Copy Summary dengan ID khusus
         st.button(
             "📋 Copy Summary", 
