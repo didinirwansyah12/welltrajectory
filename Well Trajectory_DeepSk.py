@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from math import sin, cos, tan, radians, degrees, sqrt, atan2, acos
-from io import StringIO
+import pyperclip  # For clipboard functionality
 
 # Helper functions
 def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
@@ -11,7 +11,10 @@ def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
     inc2_rad = radians(inc2)
     azi_diff_rad = radians(azi2 - azi1)
     
-    dl_rad = acos(cos(inc1_rad) * cos(inc2_rad) + sin(inc1_rad) * sin(inc2_rad) * cos(azi_diff_rad))
+    dl_rad = acos(
+        cos(inc1_rad) * cos(inc2_rad) + 
+        sin(inc1_rad) * sin(inc2_rad) * cos(azi_diff_rad)
+    )
     return degrees(dl_rad)
 
 def minimum_curvature(inc1, inc2, azi1, azi2, md):
@@ -166,11 +169,18 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
         'BUR': 0.0
     })
     
-    # Generate detailed survey at 30m intervals
+    # Generate detailed survey at 30m intervals including KOP, EOB, and Target
     detailed_survey = []
-    md_intervals = np.arange(0, td_md + 30, 30)
     
-    for md in md_intervals:
+    # Create all possible MD points (30m intervals + key points)
+    all_md_points = set(np.arange(0, td_md + 30, 30))
+    all_md_points.update([0, kop, eob_md, target_md, td_md])
+    all_md_points = sorted(all_md_points)
+    
+    for md in all_md_points:
+        if md > td_md:
+            continue
+            
         if md <= kop:  # Vertical section
             tvd = md
             inc = 0.0
@@ -178,7 +188,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
             n_rel = 0.0
             e_rel = 0.0
             bur_val = 0.0
-            parameter = "Vertical" if md > 0 else "RKB"
+            parameter = "RKB" if md == 0 else "KOP" if md == kop else "Vertical"
         elif md <= eob_md:  # Build section
             alpha = (md - kop) / radius
             inc = degrees(alpha)
@@ -187,26 +197,16 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
             n_rel = hd * cos(radians(azimuth))
             e_rel = hd * sin(radians(azimuth))
             bur_val = bur
-            parameter = "Build"
+            parameter = "EOB" if md == eob_md else "Build"
         else:  # Tangent section
-            inc = degrees(radians(inc))  # Keep final inclination
+            inc = target_inc  # Keep final inclination
             delta_md = md - eob_md
             tvd = tvd_eob + delta_md * cos(radians(inc))
             hd = hd_eob + delta_md * sin(radians(inc))
             n_rel = hd * cos(radians(azimuth))
             e_rel = hd * sin(radians(azimuth))
             bur_val = 0.0
-            parameter = "Tangent"
-            
-            # Check if this is the target point
-            if abs(md - target_md) < 0.1:
-                parameter = "Target"
-        
-        # Check if this is KOP or EOB point
-        if abs(md - kop) < 0.1:
-            parameter = "KOP"
-        elif abs(md - eob_md) < 0.1:
-            parameter = "EOB"
+            parameter = "Target" if md == target_md else ("TD" if md == td_md else "Tangent")
         
         detailed_survey.append({
             'MD': md,
@@ -255,6 +255,12 @@ div[data-testid="stDataFrame"] {
 }
 </style>
 """, unsafe_allow_html=True)
+
+# Session state to preserve calculation results
+if 'results_calculated' not in st.session_state:
+    st.session_state.results_calculated = False
+    st.session_state.summary_df = None
+    st.session_state.detailed_df = None
 
 # General Information
 st.header("General Information")
@@ -332,7 +338,7 @@ if st.button("Calculate Trajectory"):
         radius = numerator / denominator
         bur = degrees(1/radius) * 30  # Convert to °/30m
         
-        df, detailed_df, hd_target, delta_h = calculate_trajectory(
+        summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
             surface_northing, surface_easting, rkb_elevation,
             target_northing, target_easting, target_depth,
             kop, bur, target_inc
@@ -360,7 +366,7 @@ if st.button("Calculate Trajectory"):
                 alpha_low = alpha_mid
         inc = (alpha_low + alpha_high)/2
         
-        df, detailed_df, hd_target, delta_h = calculate_trajectory(
+        summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
             surface_northing, surface_easting, rkb_elevation,
             target_northing, target_easting, target_depth,
             kop, bur, inc
@@ -372,14 +378,22 @@ if st.button("Calculate Trajectory"):
         
         kop = delta_tvd - delta_h * (1/tan(alpha_rad)) - radius * ((1 - cos(alpha_rad))/sin(alpha_rad))
         
-        df, detailed_df, hd_target, delta_h = calculate_trajectory(
+        summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
             surface_northing, surface_easting, rkb_elevation,
             target_northing, target_easting, target_depth,
             kop, bur, target_inc
         )
     
+    # Store results in session state
+    st.session_state.results_calculated = True
+    st.session_state.summary_df = summary_df
+    st.session_state.detailed_df = detailed_df
+    st.session_state.distance_to_target = abs(delta_h - hd_target)
+
+# Display results if they exist
+if st.session_state.results_calculated:
     # Calculate distance to target
-    distance_to_target = abs(delta_h - hd_target)
+    distance_to_target = st.session_state.distance_to_target
     
     # Format the output DataFrame with proper number formatting
     st.header("Trajectory Results Summary")
@@ -395,13 +409,13 @@ if st.button("Calculate Trajectory"):
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
     with col2:
-        # Add copy button aligned to top right
-        if st.button("📋 Copy Table", key="copy_button"):
-            df.to_clipboard(index=False)
-            st.success("Table copied to clipboard!")
+        # Add copy button that actually works
+        if st.button("📋 Copy Summary Table", key="copy_summary_button"):
+            pyperclip.copy(st.session_state.summary_df.to_csv(index=False))
+            st.success("Summary table copied to clipboard!")
     
     # Create a styled dataframe with consistent number formatting
-    styled_df = df.style.format({
+    styled_df = st.session_state.summary_df.style.format({
         'MD': '{:,.2f}',
         'TVD': '{:,.2f}',
         'Inc': '{:,.2f}',
@@ -419,14 +433,19 @@ if st.button("Calculate Trajectory"):
     st.dataframe(
         styled_df,
         use_container_width=True,
-        height=(len(df) + 1) * 35 + 3
+        height=(len(st.session_state.summary_df) + 1) * 35 + 3
     )
     
     # Detailed Survey Results
     st.header("Detailed Survey Results")
     
+    # Add copy button for detailed table
+    if st.button("📋 Copy Detailed Table", key="copy_detailed_button"):
+        pyperclip.copy(st.session_state.detailed_df.to_csv(index=False))
+        st.success("Detailed table copied to clipboard!")
+    
     # Create a styled dataframe for detailed survey
-    styled_detailed_df = detailed_df.style.format({
+    styled_detailed_df = st.session_state.detailed_df.style.format({
         'MD': '{:,.2f}',
         'TVD': '{:,.2f}',
         'Inc': '{:,.2f}',
@@ -444,5 +463,5 @@ if st.button("Calculate Trajectory"):
     st.dataframe(
         styled_detailed_df,
         use_container_width=True,
-        height=(len(detailed_df) + 1) * 35 + 3
+        height=(len(st.session_state.detailed_df) + 1) * 35 + 3
     )
