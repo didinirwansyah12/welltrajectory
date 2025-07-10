@@ -396,6 +396,18 @@ if st.button("Calculate Trajectory"):
     st.session_state.target_easting = target_easting
     st.session_state.target_depth = target_depth
 
+    st.session_state.update({
+        'results_calculated': True,
+        'summary_df': summary_df,
+        'detailed_df': detailed_df,
+        'distance_to_target': abs(delta_h - hd_target),
+        'surface_northing': surface_northing,
+        'surface_easting': surface_easting,
+        'target_northing': target_northing,
+        'target_easting': target_easting,
+        'target_depth': target_depth,
+        'rkb_elevation': rkb_elevation  # Ini yang paling penting
+    })
 # Display results if they exist
 if st.session_state.results_calculated:
     # Calculate distance to target
@@ -484,52 +496,58 @@ if st.session_state.results_calculated:
     # ============== TRAJECTORY VISUALIZATION ==============
     st.header("Trajectory Visualization")
     
-    # Prepare data
-    df_viz = st.session_state.detailed_df
-    target_disp = sqrt((st.session_state.target_northing - st.session_state.surface_northing)**2 + 
-                      (st.session_state.target_easting - st.session_state.surface_easting)**2)
-    target_tvd = st.session_state.rkb_elevation - st.session_state.target_depth
-    
-    # Create two columns for plots
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # 1. Vertical View Plot
-        fig1, ax1 = plt.subplots(figsize=(8,6))
-        ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
-        ax1.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
-        ax1.set_xlim(-100, max(df_viz['Displacement']) * 1.1)
-        ax1.set_xlabel('Displacement (m)', fontweight='bold')
-        ax1.set_ylabel('TVD (m)', fontweight='bold')
-        ax1.set_title('VERTICAL VIEW', fontweight='bold')
-        ax1.grid(True, linestyle='--', alpha=0.7)
-        ax1.legend(loc='upper right')
-        ax1.invert_yaxis()
-        st.pyplot(fig1)
-        plt.close()
-    
-    with col2:
-        # 2. Azimuth View Plot
-        fig2, ax2 = plt.subplots(figsize=(8,8))
-        ax2.plot(df_viz['Easting'], df_viz['Northing'], 'b-', linewidth=2, label='Trajectory')
-        ax2.plot(st.session_state.target_easting, st.session_state.target_northing, 
-                'rx', markersize=10, label='Target')
-        ax2.set_xlabel('Easting (m)', fontweight='bold')
-        ax2.set_ylabel('Northing (m)', fontweight='bold')
-        ax2.set_title('AZIMUTH VIEW', fontweight='bold')
-        ax2.grid(True, linestyle='--', alpha=0.7)
-        ax2.legend(loc='upper right')
-        ax2.set_aspect('equal')
+    try:
+        # Pastikan semua variabel ada di session state
+        df_viz = st.session_state.detailed_df
+        target_disp = sqrt((st.session_state.target_northing - st.session_state.surface_northing)**2 + 
+                          (st.session_state.target_easting - st.session_state.surface_easting)**2)
+        target_tvd = st.session_state.rkb_elevation - st.session_state.target_depth
         
-        # Adjust plot limits
-        buffer = 50  # meter
-        min_east = min(min(df_viz['Easting']), st.session_state.target_easting) - buffer
-        max_east = max(max(df_viz['Easting']), st.session_state.target_easting) + buffer
-        min_north = min(min(df_viz['Northing']), st.session_state.target_northing) - buffer
-        max_north = max(max(df_viz['Northing']), st.session_state.target_northing) + buffer
+        # Create plots
+        col1, col2 = st.columns(2)
         
-        ax2.set_xlim(min_east, max_east)
-        ax2.set_ylim(min_north, max_north)
+        with col1:
+            # Vertical View Plot
+            fig1 = plt.figure(figsize=(8,6))
+            plt.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
+            plt.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
+            plt.xlim(-100, max(df_viz['Displacement']) * 1.1)
+            plt.xlabel('Displacement (m)', fontweight='bold')
+            plt.ylabel('TVD (m)', fontweight='bold')
+            plt.title('VERTICAL VIEW', fontweight='bold')
+            plt.grid(True, linestyle='--', alpha=0.7)
+            plt.legend(loc='upper right')
+            plt.gca().invert_yaxis()
+            st.pyplot(fig1)
+            plt.close()
         
-        st.pyplot(fig2)
-        plt.close()
+        with col2:
+            # Azimuth View Plot
+            fig2 = plt.figure(figsize=(8,8))
+            plt.plot(df_viz['Easting'], df_viz['Northing'], 'b-', linewidth=2, label='Trajectory')
+            plt.plot(st.session_state.target_easting, st.session_state.target_northing, 
+                    'rx', markersize=10, label='Target')
+            plt.xlabel('Easting (m)', fontweight='bold')
+            plt.ylabel('Northing (m)', fontweight='bold')
+            plt.title('AZIMUTH VIEW', fontweight='bold')
+            plt.grid(True, linestyle='--', alpha=0.7)
+            plt.legend(loc='upper right')
+            plt.gca().set_aspect('equal')
+            
+            # Adjust plot limits
+            buffer = 50
+            min_east = min(min(df_viz['Easting']), st.session_state.target_easting) - buffer
+            max_east = max(max(df_viz['Easting']), st.session_state.target_easting) + buffer
+            min_north = min(min(df_viz['Northing']), st.session_state.target_northing) - buffer
+            max_north = max(max(df_viz['Northing']), st.session_state.target_northing) + buffer
+            
+            plt.xlim(min_east, max_east)
+            plt.ylim(min_north, max_north)
+            
+            st.pyplot(fig2)
+            plt.close()
+            
+    except Exception as e:
+        st.error(f"Error creating plots: {str(e)}")
+        st.write("Debug Info - rkb_elevation:", st.session_state.get('rkb_elevation'))
+        st.write("Debug Info - target_depth:", st.session_state.get('target_depth'))
