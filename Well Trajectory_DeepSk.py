@@ -464,9 +464,6 @@ if st.session_state.results_calculated:
         }),
         use_container_width=True
     )
-
-    if st.session_state.results_calculated:
-        # ... [tampilkan tabel summary seperti sebelumnya] ...
     
         # ============== TRAJECTORY VISUALIZATION ==============
         st.header("Trajectory Visualization")
