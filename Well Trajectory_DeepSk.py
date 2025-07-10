@@ -509,7 +509,7 @@ if st.session_state.results_calculated:
         
         with col1:
             # 1. Vertical View Plot (1:2 aspect ratio - Tall and narrow)
-            fig1 = plt.figure(figsize=(5, 10))  # Width:Height = 1:2
+            fig1 = plt.figure(figsize=(2.5, 5))  # Width:Height = 1:2
             ax1 = fig1.add_subplot(111)
             
             ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
