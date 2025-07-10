@@ -515,7 +515,7 @@ if st.session_state.results_calculated:
             ax1 = fig1.add_subplot(111)
             
             ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
-            ax1.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
+            ax1.plot(target_disp, target_tvd, 'rx', markersize=5, label='Target')
             
             # Set limits
             x_padding = max(df_viz['Displacement']) * 0.1
