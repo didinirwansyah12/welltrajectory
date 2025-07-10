@@ -14,7 +14,6 @@ def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
     dl_rad = acos(
         cos(inc1_rad) * cos(inc2_rad) + 
         sin(inc1_rad) * sin(inc2_rad) * cos(azi_diff_rad)
-    )
     return degrees(dl_rad)
 
 def minimum_curvature(inc1, inc2, azi1, azi2, md):
@@ -94,7 +93,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
     hd_eob = radius * (1 - cos(radians(inc)))
     tvd_eob = kop + radius * sin(radians(inc))
     
-    # Calculate northing and easting at EOB
+    # Calculate northing and easting at EOB (relative to surface)
     n_eob = hd_eob * cos(radians(azimuth))
     e_eob = hd_eob * sin(radians(azimuth))
     
@@ -120,7 +119,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
     hd_target = hd_eob + tangent_length * sin(radians(inc))
     target_md = eob_md + tangent_length
     
-    # Calculate northing and easting at Target
+    # Calculate northing and easting at Target (relative to surface)
     n_target = hd_target * cos(radians(azimuth))
     e_target = hd_target * sin(radians(azimuth))
     
@@ -130,8 +129,8 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
         'TVD': rkb_elevation - target_depth,
         'Inc': inc,
         'Azimuth': azimuth,
-        'N+': n_target - n_eob,
-        'E+': e_target - e_eob,
+        'N+': n_target,
+        'E+': e_target,
         'Northing': surface_northing + n_target,
         'Easting': surface_easting + e_target,
         'Displacement': hd_target,
@@ -160,8 +159,8 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
         'TVD': tvd_td,
         'Inc': inc,
         'Azimuth': azimuth,
-        'N+': n_td - n_target,
-        'E+': e_td - e_target,
+        'N+': n_td,
+        'E+': e_td,
         'Northing': surface_northing + n_td,
         'Easting': surface_easting + e_td,
         'Displacement': hd_td,
@@ -169,12 +168,69 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
         'BUR': 0.0
     })
     
-    return pd.DataFrame(points), hd_target, delta_h
+    # Generate detailed survey at 30m intervals
+    detailed_survey = []
+    md_intervals = np.arange(0, td_md + 30, 30)
+    
+    for md in md_intervals:
+        if md <= kop:  # Vertical section
+            tvd = md
+            inc = 0.0
+            hd = 0.0
+            n_rel = 0.0
+            e_rel = 0.0
+            bur_val = 0.0
+            parameter = "Vertical" if md > 0 else "RKB"
+        elif md <= eob_md:  # Build section
+            alpha = (md - kop) / radius
+            inc = degrees(alpha)
+            tvd = kop + radius * sin(alpha)
+            hd = radius * (1 - cos(alpha))
+            n_rel = hd * cos(radians(azimuth))
+            e_rel = hd * sin(radians(azimuth))
+            bur_val = bur
+            parameter = "Build"
+        else:  # Tangent section
+            inc = degrees(radians(inc))  # Keep final inclination
+            delta_md = md - eob_md
+            tvd = tvd_eob + delta_md * cos(radians(inc))
+            hd = hd_eob + delta_md * sin(radians(inc))
+            n_rel = hd * cos(radians(azimuth))
+            e_rel = hd * sin(radians(azimuth))
+            bur_val = 0.0
+            parameter = "Tangent"
+            
+            # Check if this is the target point
+            if abs(md - target_md) < 0.1:
+                parameter = "Target"
+        
+        # Check if this is KOP or EOB point
+        if abs(md - kop) < 0.1:
+            parameter = "KOP"
+        elif abs(md - eob_md) < 0.1:
+            parameter = "EOB"
+        
+        detailed_survey.append({
+            'MD': md,
+            'TVD': tvd,
+            'Inc': inc,
+            'Azimuth': azimuth,
+            'N+': n_rel,
+            'E+': e_rel,
+            'Northing': surface_northing + n_rel,
+            'Easting': surface_easting + e_rel,
+            'Displacement': hd,
+            'TVDSS': rkb_elevation - tvd,
+            'BUR': bur_val,
+            'Parameter': parameter
+        })
+    
+    return pd.DataFrame(points), pd.DataFrame(detailed_survey), hd_target, delta_h
 
 # Streamlit UI Configuration
 st.set_page_config(layout="wide")
 st.title("Well Trajectory Planner")
-st.markdown("**by Rigsis Drilling Team. For J-Type Well with constant Azimuth. Minimum Curvature method.**")
+st.markdown("**For J-Type Well with constant Azimuth. Minimum Curvature method.**")
 
 # Custom CSS for styling
 st.markdown("""
@@ -194,7 +250,11 @@ div[data-testid="stDataFrame"] {
     color: #e74c3c;
     font-weight: bold;
 }
-
+.copy-button {
+    float: right;
+    margin-top: -40px;
+    margin-right: 10px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -274,7 +334,7 @@ if st.button("Calculate Trajectory"):
         radius = numerator / denominator
         bur = degrees(1/radius) * 30  # Convert to °/30m
         
-        df, hd_target, delta_h = calculate_trajectory(
+        df, detailed_df, hd_target, delta_h = calculate_trajectory(
             surface_northing, surface_easting, rkb_elevation,
             target_northing, target_easting, target_depth,
             kop, bur, target_inc
@@ -302,7 +362,7 @@ if st.button("Calculate Trajectory"):
                 alpha_low = alpha_mid
         inc = (alpha_low + alpha_high)/2
         
-        df, hd_target, delta_h = calculate_trajectory(
+        df, detailed_df, hd_target, delta_h = calculate_trajectory(
             surface_northing, surface_easting, rkb_elevation,
             target_northing, target_easting, target_depth,
             kop, bur, inc
@@ -314,7 +374,7 @@ if st.button("Calculate Trajectory"):
         
         kop = delta_tvd - delta_h * (1/tan(alpha_rad)) - radius * ((1 - cos(alpha_rad))/sin(alpha_rad))
         
-        df, hd_target, delta_h = calculate_trajectory(
+        df, detailed_df, hd_target, delta_h = calculate_trajectory(
             surface_northing, surface_easting, rkb_elevation,
             target_northing, target_easting, target_depth,
             kop, bur, target_inc
@@ -324,9 +384,10 @@ if st.button("Calculate Trajectory"):
     distance_to_target = abs(delta_h - hd_target)
     
     # Format the output DataFrame with proper number formatting
-    st.header("Trajectory Results")
+    st.header("Trajectory Results Summary")
     
-
+    # Create columns for distance display and copy button
+    col1, col2 = st.columns([3, 1])
     
     with col1:
         # Display distance with color coding
@@ -335,7 +396,11 @@ if st.button("Calculate Trajectory"):
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
-
+    with col2:
+        # Add copy button aligned to top right
+        if st.button("📋 Copy Table", key="copy_button"):
+            df.to_clipboard(index=False)
+            st.success("Table copied to clipboard!")
     
     # Create a styled dataframe with consistent number formatting
     styled_df = df.style.format({
@@ -357,4 +422,29 @@ if st.button("Calculate Trajectory"):
         styled_df,
         use_container_width=True,
         height=(len(df) + 1) * 35 + 3
+    )
+    
+    # Detailed Survey Results
+    st.header("Detailed Survey Results")
+    
+    # Create a styled dataframe for detailed survey
+    styled_detailed_df = detailed_df.style.format({
+        'MD': '{:,.2f}',
+        'TVD': '{:,.2f}',
+        'Inc': '{:,.2f}',
+        'Azimuth': '{:,.2f}',
+        'N+': '{:,.2f}',
+        'E+': '{:,.2f}',
+        'Northing': '{:,.2f}',
+        'Easting': '{:,.2f}',
+        'Displacement': '{:,.2f}',
+        'TVDSS': '{:,.2f}',
+        'BUR': '{:,.2f}'
+    })
+    
+    # Display the detailed survey dataframe
+    st.dataframe(
+        styled_detailed_df,
+        use_container_width=True,
+        height=(len(detailed_df) + 1) * 35 + 3
     )
