@@ -395,6 +395,7 @@ if st.button("Calculate Trajectory"):
     st.session_state.target_northing = target_northing
     st.session_state.target_easting = target_easting
     st.session_state.target_depth = target_depth
+    st.session_state.rkb_elevation = rkb_elevation
 
     st.session_state.update({
         'results_calculated': True,
