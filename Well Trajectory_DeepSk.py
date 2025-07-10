@@ -465,17 +465,17 @@ if st.session_state.results_calculated:
         use_container_width=True
     )
     
-        # ============== TRAJECTORY VISUALIZATION ==============
-        st.header("Trajectory Visualization")
+    # ============== TRAJECTORY VISUALIZATION ==============
+    st.header("Trajectory Visualization")
     
-        # Prepare data
-        df_viz = st.session_state.detailed_df
-        target_disp = sqrt((st.session_state.target_northing - st.session_state.surface_northing)**2 + 
-                          (st.session_state.target_easting - st.session_state.surface_easting)**2)
-        target_tvd = st.session_state.rkb_elevation - st.session_state.target_depth
+    # Prepare data
+    df_viz = st.session_state.detailed_df
+    target_disp = sqrt((st.session_state.target_northing - st.session_state.surface_northing)**2 + 
+                      (st.session_state.target_easting - st.session_state.surface_easting)**2)
+    target_tvd = st.session_state.rkb_elevation - st.session_state.target_depth
     
-        # Create two columns for plots
-        col1, col2 = st.columns(2)
+    # Create two columns for plots
+    col1, col2 = st.columns(2)
     
     with col1:
         # 1. Vertical View Plot
@@ -518,8 +518,6 @@ if st.session_state.results_calculated:
         st.pyplot(fig2)
         plt.close()
     
-    # ... [lanjutkan dengan tampilkan tabel detailed seperti sebelumnya] ...
-    
     # Detailed Survey Results
     st.header("Detailed Survey Results")
     
@@ -551,4 +549,3 @@ if st.session_state.results_calculated:
         use_container_width=True,
         height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
     )
-
