@@ -410,7 +410,7 @@ if st.session_state.results_calculated:
     
     with col2:
         # Add working copy button for summary table
-        if st.button("📋 Copy Summary", key="copy_summary")
+        if st.button("📋 Copy Summary", key="copy_summary"):
            # Replace pyperclip copy with download button
         csv = st.session_state.summary_df.to_csv(index=False)
         st.download_button(
