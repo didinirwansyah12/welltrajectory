@@ -427,7 +427,7 @@ if st.session_state.results_calculated:  # Pastikan ada titik dua
                 unsafe_allow_html=True
             )  # 12 spasi
     
-    if st.session_state.results_calculated:
+if st.session_state.results_calculated:
     # ... [kode sebelumnya tetap sama sampai display tabel] ...
     
     with col2:
