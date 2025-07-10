@@ -504,18 +504,18 @@ if st.session_state.results_calculated:
                         (st.session_state.target_easting - st.session_state.surface_easting)**2)
         target_tvd = st.session_state.rkb_elevation - st.session_state.target_depth
         
-        # Create two columns with custom width ratio
-        col1, col2 = st.columns([2, 1])  # 2:1 ratio
+        # Create two columns with adjusted ratio
+        col1, col2 = st.columns([1, 1])  # Equal width columns
         
         with col1:
-            # 1. Vertical View Plot (2:1 aspect ratio)
-            fig1 = plt.figure(figsize=(10,5))  # Width:Height = 2:1
+            # 1. Vertical View Plot (1:2 aspect ratio - Tall and narrow)
+            fig1 = plt.figure(figsize=(5, 10))  # Width:Height = 1:2
             ax1 = fig1.add_subplot(111)
             
             ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
             ax1.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
             
-            # Set limits with 10% padding
+            # Set limits with padding
             x_padding = max(df_viz['Displacement']) * 0.1
             ax1.set_xlim(-100, max(df_viz['Displacement']) + x_padding)
             
@@ -524,7 +524,7 @@ if st.session_state.results_calculated:
             
             ax1.set_xlabel('Displacement (m)', fontsize=10, fontweight='bold')
             ax1.set_ylabel('TVD (m)', fontsize=10, fontweight='bold')
-            ax1.set_title('VERTICAL VIEW (Scale 2:1)', fontsize=12, fontweight='bold')
+            ax1.set_title('VERTICAL VIEW (Scale 1:2)', fontsize=12, fontweight='bold')
             ax1.grid(True, linestyle=':', alpha=0.5)
             ax1.legend(loc='upper right', fontsize=9)
             ax1.tick_params(axis='both', which='major', labelsize=8)
@@ -533,29 +533,25 @@ if st.session_state.results_calculated:
             plt.close()
         
         with col2:
-            # 2. Azimuth View Plot (1:1 aspect ratio)
-            fig2 = plt.figure(figsize=(5,5))  # Square plot
+            # 2. Azimuth View Plot (1:1 aspect ratio - Perfect square)
+            fig2 = plt.figure(figsize=(5, 5))  # Square plot
             ax2 = fig2.add_subplot(111)
             
             ax2.plot(df_viz['Easting'], df_viz['Northing'], 'b-', linewidth=2, label='Trajectory')
             ax2.plot(st.session_state.target_easting, st.session_state.target_northing, 
                     'rx', markersize=10, label='Target')
             
-            # Calculate plot boundaries with 10% padding
-            buffer = max(
-                (max(df_viz['Easting']) - min(df_viz['Easting'])),
-                (max(df_viz['Northing']) - min(df_viz['Northing']))
-            ) * 0.1
+            # Calculate square plot boundaries
+            east_range = max(df_viz['Easting']) - min(df_viz['Easting'])
+            north_range = max(df_viz['Northing']) - min(df_viz['Northing'])
+            max_range = max(east_range, north_range) * 1.1  # 10% padding
             
-            min_east = min(df_viz['Easting']) - buffer
-            max_east = max(df_viz['Easting']) + buffer
-            min_north = min(df_viz['Northing']) - buffer
-            max_north = max(df_viz['Northing']) + buffer
+            center_east = (max(df_viz['Easting']) + min(df_viz['Easting'])) / 2
+            center_north = (max(df_viz['Northing']) + min(df_viz['Northing'])) / 2
             
-            # Make square axis
-            ax2.set_xlim(min_east, max_east)
-            ax2.set_ylim(min_north, max_north)
-            ax2.set_aspect('equal', adjustable='datalim')
+            ax2.set_xlim(center_east - max_range/2, center_east + max_range/2)
+            ax2.set_ylim(center_north - max_range/2, center_north + max_range/2)
+            ax2.set_aspect('equal')
             
             ax2.set_xlabel('Easting (m)', fontsize=10, fontweight='bold')
             ax2.set_ylabel('Northing (m)', fontsize=10, fontweight='bold')
