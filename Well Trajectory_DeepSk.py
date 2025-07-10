@@ -498,57 +498,74 @@ if st.session_state.results_calculated:
     st.header("Trajectory Visualization")
     
     try:
-        # Pastikan semua variabel ada di session state
+        # Prepare data
         df_viz = st.session_state.detailed_df
         target_disp = sqrt((st.session_state.target_northing - st.session_state.surface_northing)**2 + 
-                          (st.session_state.target_easting - st.session_state.surface_easting)**2)
+                        (st.session_state.target_easting - st.session_state.surface_easting)**2)
         target_tvd = st.session_state.rkb_elevation - st.session_state.target_depth
         
-        # Create plots
-        col1, col2 = st.columns(2)
+        # Create two columns with custom width ratio
+        col1, col2 = st.columns([2, 1])  # 2:1 ratio
         
         with col1:
-            # Vertical View Plot
-            fig1 = plt.figure(figsize=(8,6))
-            plt.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
-            plt.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
-            plt.xlim(-100, max(df_viz['Displacement']) * 1.1)
-            plt.xlabel('Displacement (m)', fontweight='bold')
-            plt.ylabel('TVD (m)', fontweight='bold')
-            plt.title('VERTICAL VIEW', fontweight='bold')
-            plt.grid(True, linestyle='--', alpha=0.7)
-            plt.legend(loc='upper right')
-            plt.gca().invert_yaxis()
+            # 1. Vertical View Plot (2:1 aspect ratio)
+            fig1 = plt.figure(figsize=(10,5))  # Width:Height = 2:1
+            ax1 = fig1.add_subplot(111)
+            
+            ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
+            ax1.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
+            
+            # Set limits with 10% padding
+            x_padding = max(df_viz['Displacement']) * 0.1
+            ax1.set_xlim(-100, max(df_viz['Displacement']) + x_padding)
+            
+            y_padding = max(df_viz['TVD']) * 0.1
+            ax1.set_ylim(max(df_viz['TVD']) + y_padding, min(df_viz['TVD']) - y_padding)
+            
+            ax1.set_xlabel('Displacement (m)', fontsize=10, fontweight='bold')
+            ax1.set_ylabel('TVD (m)', fontsize=10, fontweight='bold')
+            ax1.set_title('VERTICAL VIEW (Scale 2:1)', fontsize=12, fontweight='bold')
+            ax1.grid(True, linestyle=':', alpha=0.5)
+            ax1.legend(loc='upper right', fontsize=9)
+            ax1.tick_params(axis='both', which='major', labelsize=8)
+            
             st.pyplot(fig1)
             plt.close()
         
         with col2:
-            # Azimuth View Plot
-            fig2 = plt.figure(figsize=(8,8))
-            plt.plot(df_viz['Easting'], df_viz['Northing'], 'b-', linewidth=2, label='Trajectory')
-            plt.plot(st.session_state.target_easting, st.session_state.target_northing, 
+            # 2. Azimuth View Plot (1:1 aspect ratio)
+            fig2 = plt.figure(figsize=(5,5))  # Square plot
+            ax2 = fig2.add_subplot(111)
+            
+            ax2.plot(df_viz['Easting'], df_viz['Northing'], 'b-', linewidth=2, label='Trajectory')
+            ax2.plot(st.session_state.target_easting, st.session_state.target_northing, 
                     'rx', markersize=10, label='Target')
-            plt.xlabel('Easting (m)', fontweight='bold')
-            plt.ylabel('Northing (m)', fontweight='bold')
-            plt.title('AZIMUTH VIEW', fontweight='bold')
-            plt.grid(True, linestyle='--', alpha=0.7)
-            plt.legend(loc='upper right')
-            plt.gca().set_aspect('equal')
             
-            # Adjust plot limits
-            buffer = 50
-            min_east = min(min(df_viz['Easting']), st.session_state.target_easting) - buffer
-            max_east = max(max(df_viz['Easting']), st.session_state.target_easting) + buffer
-            min_north = min(min(df_viz['Northing']), st.session_state.target_northing) - buffer
-            max_north = max(max(df_viz['Northing']), st.session_state.target_northing) + buffer
+            # Calculate plot boundaries with 10% padding
+            buffer = max(
+                (max(df_viz['Easting']) - min(df_viz['Easting'])),
+                (max(df_viz['Northing']) - min(df_viz['Northing']))
+            ) * 0.1
             
-            plt.xlim(min_east, max_east)
-            plt.ylim(min_north, max_north)
+            min_east = min(df_viz['Easting']) - buffer
+            max_east = max(df_viz['Easting']) + buffer
+            min_north = min(df_viz['Northing']) - buffer
+            max_north = max(df_viz['Northing']) + buffer
+            
+            # Make square axis
+            ax2.set_xlim(min_east, max_east)
+            ax2.set_ylim(min_north, max_north)
+            ax2.set_aspect('equal', adjustable='datalim')
+            
+            ax2.set_xlabel('Easting (m)', fontsize=10, fontweight='bold')
+            ax2.set_ylabel('Northing (m)', fontsize=10, fontweight='bold')
+            ax2.set_title('AZIMUTH VIEW (Scale 1:1)', fontsize=12, fontweight='bold')
+            ax2.grid(True, linestyle=':', alpha=0.5)
+            ax2.legend(loc='upper right', fontsize=9)
+            ax2.tick_params(axis='both', which='major', labelsize=8)
             
             st.pyplot(fig2)
             plt.close()
             
     except Exception as e:
         st.error(f"Error creating plots: {str(e)}")
-        st.write("Debug Info - rkb_elevation:", st.session_state.get('rkb_elevation'))
-        st.write("Debug Info - target_depth:", st.session_state.get('target_depth'))
