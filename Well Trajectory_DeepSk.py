@@ -524,11 +524,11 @@ if st.session_state.results_calculated:
             y_padding = max(df_viz['TVD']) * 0.1
             ax1.set_ylim(max(df_viz['TVD']) + y_padding, min(df_viz['TVD']) - y_padding)
             
-            ax1.set_xlabel('Displacement (m)', fontsize=10, fontweight='bold')
-            ax1.set_ylabel('TVD (m)', fontsize=10, fontweight='bold')
-            ax1.set_title('VERTICAL VIEW', fontsize=12, fontweight='bold')
+            ax1.set_xlabel('Displacement (m)', fontsize=5, fontweight='bold')
+            ax1.set_ylabel('TVD (m)', fontsize=5, fontweight='bold')
+            ax1.set_title('VERTICAL VIEW', fontsize=6, fontweight='bold')
             ax1.grid(True, linestyle=':', alpha=0.5)
-            ax1.legend(loc='upper right', fontsize=9)
+            ax1.legend(loc='upper right', fontsize=4.5)
             
             st.pyplot(fig1)
             plt.close()
