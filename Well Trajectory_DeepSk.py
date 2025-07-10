@@ -511,7 +511,7 @@ if st.session_state.results_calculated:
         
         with col1:
             # 1. Vertical View Plot (1:2 aspect ratio)
-            fig1 = plt.figure(figsize=(plot_width, plot_width/2))  # Width:Height = 2:1
+            fig1 = plt.figure(figsize=(plot_width/2, plot_width))  # Width:Height = 1:2
             ax1 = fig1.add_subplot(111)
             
             ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
@@ -556,8 +556,8 @@ if st.session_state.results_calculated:
             ax2.set_ylim(-max_range, max_range)
             ax2.set_aspect('equal')
             
-            ax2.set_xlabel('Easting Relative to Surface (E+)', fontsize=10, fontweight='bold')
-            ax2.set_ylabel('Northing Relative to Surface (N+)', fontsize=10, fontweight='bold')
+            ax2.set_xlabel('E+', fontsize=10, fontweight='bold')
+            ax2.set_ylabel('N+', fontsize=10, fontweight='bold')
             ax2.set_title('AZIMUTH VIEW (1:1 Ratio - Relative Coordinates)', fontsize=12, fontweight='bold')
             ax2.grid(True, linestyle=':', alpha=0.5)
             ax2.legend(loc='upper right', fontsize=9)
