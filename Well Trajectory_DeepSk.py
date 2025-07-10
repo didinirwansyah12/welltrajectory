@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from math import sin, cos, tan, radians, degrees, sqrt, atan2, acos
-import pyperclip  # For clipboard functionality
+import pyperclip
 
 # Helper functions
 def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
@@ -173,9 +173,9 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
     detailed_survey = []
     
     # Create all possible MD points (30m intervals + key points)
-    all_md_points = set(np.arange(0, td_md + 30, 30))
-    all_md_points.update([0, kop, eob_md, target_md, td_md])
-    all_md_points = sorted(all_md_points)
+    regular_intervals = list(np.arange(0, td_md + 30, 30))  # 30m intervals
+    key_points = [0, kop, eob_md, target_md, td_md]  # Key points
+    all_md_points = sorted(list(set(regular_intervals + key_points)))  # Combine and remove duplicates
     
     for md in all_md_points:
         if md > td_md:
@@ -199,7 +199,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
             bur_val = bur
             parameter = "EOB" if md == eob_md else "Build"
         else:  # Tangent section
-            inc = target_inc  # Keep final inclination
+            inc = target_inc
             delta_md = md - eob_md
             tvd = tvd_eob + delta_md * cos(radians(inc))
             hd = hd_eob + delta_md * sin(radians(inc))
@@ -409,59 +409,58 @@ if st.session_state.results_calculated:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
     with col2:
-        # Add copy button that actually works
-        if st.button("📋 Copy Summary Table", key="copy_summary_button"):
-            pyperclip.copy(st.session_state.summary_df.to_csv(index=False))
+        # Add working copy button for summary table
+        if st.button("📋 Copy Summary", key="copy_summary"):
+            # Store in session state first
+            st.session_state.clipboard_data = st.session_state.summary_df.to_csv(index=False)
+            # Then copy from session state
+            pyperclip.copy(st.session_state.clipboard_data)
             st.success("Summary table copied to clipboard!")
-    
-    # Create a styled dataframe with consistent number formatting
-    styled_df = st.session_state.summary_df.style.format({
-        'MD': '{:,.2f}',
-        'TVD': '{:,.2f}',
-        'Inc': '{:,.2f}',
-        'Azimuth': '{:,.2f}',
-        'N+': '{:,.2f}',
-        'E+': '{:,.2f}',
-        'Northing': '{:,.2f}',
-        'Easting': '{:,.2f}',
-        'Displacement': '{:,.2f}',
-        'TVDSS': '{:,.2f}',
-        'BUR': '{:,.2f}'
-    })
     
     # Display the styled dataframe
     st.dataframe(
-        styled_df,
-        use_container_width=True,
-        height=(len(st.session_state.summary_df) + 1) * 35 + 3
+        st.session_state.summary_df.style.format({
+            'MD': '{:,.2f}',
+            'TVD': '{:,.2f}',
+            'Inc': '{:,.2f}',
+            'Azimuth': '{:,.2f}',
+            'N+': '{:,.2f}',
+            'E+': '{:,.2f}',
+            'Northing': '{:,.2f}',
+            'Easting': '{:,.2f}',
+            'Displacement': '{:,.2f}',
+            'TVDSS': '{:,.2f}',
+            'BUR': '{:,.2f}'
+        }),
+        use_container_width=True
     )
     
     # Detailed Survey Results
     st.header("Detailed Survey Results")
     
-    # Add copy button for detailed table
-    if st.button("📋 Copy Detailed Table", key="copy_detailed_button"):
-        pyperclip.copy(st.session_state.detailed_df.to_csv(index=False))
+    # Add working copy button for detailed table
+    if st.button("📋 Copy Detailed", key="copy_detailed"):
+        # Store in session state first
+        st.session_state.clipboard_data = st.session_state.detailed_df.to_csv(index=False)
+        # Then copy from session state
+        pyperclip.copy(st.session_state.clipboard_data)
         st.success("Detailed table copied to clipboard!")
-    
-    # Create a styled dataframe for detailed survey
-    styled_detailed_df = st.session_state.detailed_df.style.format({
-        'MD': '{:,.2f}',
-        'TVD': '{:,.2f}',
-        'Inc': '{:,.2f}',
-        'Azimuth': '{:,.2f}',
-        'N+': '{:,.2f}',
-        'E+': '{:,.2f}',
-        'Northing': '{:,.2f}',
-        'Easting': '{:,.2f}',
-        'Displacement': '{:,.2f}',
-        'TVDSS': '{:,.2f}',
-        'BUR': '{:,.2f}'
-    })
     
     # Display the detailed survey dataframe
     st.dataframe(
-        styled_detailed_df,
+        st.session_state.detailed_df.style.format({
+            'MD': '{:,.2f}',
+            'TVD': '{:,.2f}',
+            'Inc': '{:,.2f}',
+            'Azimuth': '{:,.2f}',
+            'N+': '{:,.2f}',
+            'E+': '{:,.2f}',
+            'Northing': '{:,.2f}',
+            'Easting': '{:,.2f}',
+            'Displacement': '{:,.2f}',
+            'TVDSS': '{:,.2f}',
+            'BUR': '{:,.2f}'
+        }),
         use_container_width=True,
-        height=(len(st.session_state.detailed_df) + 1) * 35 + 3
+        height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
     )
