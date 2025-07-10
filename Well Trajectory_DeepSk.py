@@ -408,9 +408,11 @@ if st.session_state.results_calculated:
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
+   if st.session_state.results_calculated:
+    # ... [kode sebelumnya tetap sama sampai display tabel] ...
+    
     with col2:
-        # Add working copy button for summary table
-        csv = st.session_state.summary_df.to_csv(index=False)
+        csv = st.session_state.summary_df.to_csv(index=False, float_format='%.2f')
         st.download_button(
             "📋 Copy Summary",
             data=csv,
@@ -419,29 +421,15 @@ if st.session_state.results_calculated:
             key="download_summary"
         )
     
-    # Display the styled dataframe
     st.dataframe(
-        st.session_state.summary_df.style.format({
-            'MD': '{:,.2f}',
-            'TVD': '{:,.2f}',
-            'Inc': '{:,.2f}',
-            'Azimuth': '{:,.2f}',
-            'N+': '{:,.2f}',
-            'E+': '{:,.2f}',
-            'Northing': '{:,.2f}',
-            'Easting': '{:,.2f}',
-            'Displacement': '{:,.2f}',
-            'TVDSS': '{:,.2f}',
-            'BUR': '{:,.2f}'
-        }),
+        format_dataframe(st.session_state.summary_df),
         use_container_width=True
     )
     
     # Detailed Survey Results
     st.header("Detailed Survey Results")
     
-    # Add working copy button for detailed table
-    csv = st.session_state.detailed_df.to_csv(index=False)
+    csv = st.session_state.detailed_df.to_csv(index=False, float_format='%.2f')
     st.download_button(
         "📋 Copy Detailed",
         data=csv,
@@ -450,21 +438,8 @@ if st.session_state.results_calculated:
         key="download_detailed"
     )
     
-    # Display the detailed survey dataframe
     st.dataframe(
-        st.session_state.detailed_df.style.format({
-            'MD': '{:,.2f}',
-            'TVD': '{:,.2f}',
-            'Inc': '{:,.2f}',
-            'Azimuth': '{:,.2f}',
-            'N+': '{:,.2f}',
-            'E+': '{:,.2f}',
-            'Northing': '{:,.2f}',
-            'Easting': '{:,.2f}',
-            'Displacement': '{:,.2f}',
-            'TVDSS': '{:,.2f}',
-            'BUR': '{:,.2f}'
-        }),
+        format_dataframe(st.session_state.detailed_df),
         use_container_width=True,
         height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
     )
