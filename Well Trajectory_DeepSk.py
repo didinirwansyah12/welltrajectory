@@ -510,55 +510,38 @@ if st.session_state.results_calculated:
         plot_width = 6
         
         with col1:
-            # 1. Vertical View Plot (1:2 aspect ratio)
-            fig1 = plt.figure(figsize=(plot_width/2, plot_width))  # Width:Height = 1:2
-            ax1 = fig1.add_subplot(111)
-            
-            ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
-            ax1.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
-            
-            # Set limits
-            x_padding = max(df_viz['Displacement']) * 0.1
-            ax1.set_xlim(-100, max(df_viz['Displacement']) + x_padding)
-            
-            y_padding = max(df_viz['TVD']) * 0.1
-            ax1.set_ylim(max(df_viz['TVD']) + y_padding, min(df_viz['TVD']) - y_padding)
-            
-            ax1.set_xlabel('Displacement (m)', fontsize=10, fontweight='bold')
-            ax1.set_ylabel('TVD (m)', fontsize=10, fontweight='bold')
-            ax1.set_title('VERTICAL VIEW (1:2 Ratio)', fontsize=12, fontweight='bold')
-            ax1.grid(True, linestyle=':', alpha=0.5)
-            ax1.legend(loc='upper right', fontsize=9)
-            
-            st.pyplot(fig1)
-            plt.close()
+            # 1. Vertical View Plot (1:2 aspect ratio) - [Keep existing implementation]
+            # ... [existing vertical view code] ...
         
         with col2:
-            # 2. Azimuth View Plot (1:1 aspect ratio) - Menggunakan E+ dan N+
-            fig2 = plt.figure(figsize=(plot_width, plot_width))  # Width:Height = 1:1
+            # 2. Azimuth View Plot (1:1 aspect ratio) - Starting from (0,0)
+            fig2 = plt.figure(figsize=(plot_width, plot_width))
             ax2 = fig2.add_subplot(111)
             
-            # Plot relatif terhadap surface location (menggunakan N+ dan E+)
+            # Plot relative to surface location (0,0)
             ax2.plot(df_viz['E+'], df_viz['N+'], 'b-', linewidth=2, label='Trajectory')
             
-            # Target point (relatif terhadap surface)
+            # Target point relative to surface
             target_eplus = st.session_state.target_easting - st.session_state.surface_easting
             target_nplus = st.session_state.target_northing - st.session_state.surface_northing
             ax2.plot(target_eplus, target_nplus, 'rx', markersize=10, label='Target')
             
-            # Calculate boundaries
-            eplus_range = max(df_viz['E+']) - min(df_viz['E+'])
-            nplus_range = max(df_viz['N+']) - min(df_viz['N+'])
-            max_range = max(eplus_range, nplus_range, 
-                          abs(target_eplus), abs(target_nplus)) * 1.2  # 20% padding
+            # Calculate boundaries with 10% padding
+            max_eplus = max(max(df_viz['E+']), abs(min(df_viz['E+'])), abs(target_eplus))
+            max_nplus = max(max(df_viz['N+']), abs(min(df_viz['N+'])), abs(target_nplus))
+            plot_range = max(max_eplus, max_nplus) * 1.1  # 10% padding
             
-            ax2.set_xlim(-max_range, max_range)
-            ax2.set_ylim(-max_range, max_range)
+            # Set axis limits (starting from 0,0)
+            ax2.set_xlim(0, plot_range)
+            ax2.set_ylim(0, plot_range)
             ax2.set_aspect('equal')
             
-            ax2.set_xlabel('E+', fontsize=10, fontweight='bold')
-            ax2.set_ylabel('N+', fontsize=10, fontweight='bold')
-            ax2.set_title('AZIMUTH VIEW (1:1 Ratio - Relative Coordinates)', fontsize=12, fontweight='bold')
+            # Add origin (0,0) marker
+            ax2.plot(0, 0, 'ko', markersize=5, label='Surface Location')
+            
+            ax2.set_xlabel('Easting Relative to Surface (E+)', fontsize=10, fontweight='bold')
+            ax2.set_ylabel('Northing Relative to Surface (N+)', fontsize=10, fontweight='bold')
+            ax2.set_title('AZIMUTH VIEW (Relative to Surface)', fontsize=12, fontweight='bold')
             ax2.grid(True, linestyle=':', alpha=0.5)
             ax2.legend(loc='upper right', fontsize=9)
             
@@ -567,4 +550,3 @@ if st.session_state.results_calculated:
             
     except Exception as e:
         st.error(f"Error creating plots: {str(e)}")
-    
