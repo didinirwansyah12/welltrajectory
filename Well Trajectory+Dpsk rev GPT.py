@@ -117,97 +117,10 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
             n_rel = hd * cos(radians(azimuth))
             e_rel = hd * sin(radians(azimuth))
             bur_val = 0.0
-            parameter = "Target" if md == target_md else ("TD" if md == td_md else "Tangent")
+            parameter = "Target" if abs(md - target_md) < 0.1 else ("TD" if abs(md - td_md) < 0.1 else "Tangent")
         detailed_survey.append({
             'MD': md, 'TVD': tvd, 'Inc': inc, 'Azimuth': azimuth,
             'N+': n_rel, 'E+': e_rel, 'Northing': surface_northing + n_rel, 'Easting': surface_easting + e_rel,
             'Displacement': hd, 'TVDSS': rkb_elevation - tvd, 'BUR': bur_val, 'Parameter': parameter
         })
     return pd.DataFrame(points), pd.DataFrame(detailed_survey), hd_target, delta_h
-
-# Streamlit UI
-st.set_page_config(layout="wide")
-st.title("Well Trajectory Planner")
-st.markdown("**For J-Type Well with constant Azimuth. Minimum Curvature method.**")
-
-# Session state
-if 'results_calculated' not in st.session_state:
-    st.session_state.results_calculated = False
-
-# User input
-with st.sidebar:
-    st.header("Well Design Input")
-    surface_northing = st.number_input("Surface Northing (m)", value=9202757.149)
-    surface_easting = st.number_input("Surface Easting (m)", value=377233.268)
-    ground_level = st.number_input("Ground Level (mASL)", value=1000.00)
-    rig_elevation = st.number_input("Rig Elevation (m)", value=0.00)
-    rkb_elevation = ground_level + rig_elevation
-    st.markdown(f"**RKB Elevation:** {rkb_elevation:.2f} mASL")
-
-    target_northing = st.number_input("Target Northing (m)", value=9202081.409)
-    target_easting = st.number_input("Target Easting (m)", value=377153.018)
-    target_depth = st.number_input("Target Depth (TVDSS)", value=-1690.74)
-
-    kop = st.number_input("KOP (m)", value=500.0)
-    target_inc = st.number_input("Target Inclination (deg)", value=30.0)
-    bur = st.number_input("Build-Up Rate (°/30m)", value=2.0)
-
-if st.sidebar.button("Calculate Trajectory"):
-    summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
-        surface_northing, surface_easting, rkb_elevation,
-        target_northing, target_easting, target_depth,
-        kop, bur, target_inc
-    )
-    st.session_state.results_calculated = True
-    st.session_state.summary_df = summary_df
-    st.session_state.detailed_df = detailed_df
-    st.session_state.distance_to_target = abs(delta_h - hd_target)
-
-# Display results
-if st.session_state.results_calculated:
-    st.subheader("Summary Table")
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        st.dataframe(st.session_state.summary_df, use_container_width=True)
-    with col2:
-        csv = st.session_state.summary_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="⬇️ Download Summary CSV",
-            data=csv,
-            file_name='summary_table.csv',
-            mime='text/csv'
-        )
-
-    st.subheader("Detailed Survey")
-    col3, col4 = st.columns([4, 1])
-    with col3:
-        st.dataframe(st.session_state.detailed_df, use_container_width=True, height=500)
-    with col4:
-        csv2 = st.session_state.detailed_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="⬇️ Download Detailed Survey CSV",
-            data=csv2,
-            file_name='detailed_survey.csv',
-            mime='text/csv'
-        )
-
-    st.subheader("Trajectory Plots")
-    fig1 = go.Figure()
-    fig1.add_trace(go.Scatter(
-        x=st.session_state.detailed_df['Easting'],
-        y=st.session_state.detailed_df['Northing'],
-        mode='lines+markers',
-        name='Plan View'
-    ))
-    fig1.update_layout(title="Plan View (Top View)", xaxis_title="Easting (m)", yaxis_title="Northing (m)", height=500)
-    st.plotly_chart(fig1, use_container_width=True)
-
-    fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(
-        x=st.session_state.detailed_df['MD'],
-        y=st.session_state.detailed_df['TVDSS'],
-        mode='lines+markers',
-        name='Profile View'
-    ))
-    fig2.update_layout(title="Profile View (MD vs TVDSS)", xaxis_title="Measured Depth (m)", yaxis_title="TVDSS (m)", height=500, yaxis_autorange='reversed')
-    st.plotly_chart(fig2, use_container_width=True)
