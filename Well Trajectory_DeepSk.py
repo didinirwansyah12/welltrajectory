@@ -414,24 +414,6 @@ if st.session_state.results_calculated:
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
     
-if st.session_state.results_calculated:  # Pastikan ada titik dua
-    # Trajectory Results Summary
-    st.header("Trajectory Results Summary")
-    
-    col1, col2 = st.columns([3, 1])  # 4 spasi
-    with col1:  # 4 spasi
-        if st.session_state.distance_to_target <= 1.0:  # 8 spasi
-            st.markdown(
-                f"**Distance to target = <span class='distance-good'>"
-                f"{st.session_state.distance_to_target:,.2f} m</span>**",
-                unsafe_allow_html=True
-            )  # 12 spasi
-        else:  # 8 spasi
-            st.markdown(
-                f"**Distance to target = <span class='distance-bad'>"
-                f"{st.session_state.distance_to_target:,.2f} m</span>**",
-                unsafe_allow_html=True
-            )  # 12 spasi
     
 if st.session_state.results_calculated:
     # ... [kode sebelumnya tetap sama sampai display tabel] ...
