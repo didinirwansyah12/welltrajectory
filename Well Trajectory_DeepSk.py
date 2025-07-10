@@ -11,7 +11,7 @@ def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
     inc2_rad = radians(inc2)
     azi_diff_rad = radians(azi2 - azi1)
     
-    dl_rad = acos(
+    dl_rad = acos
         cos(inc1_rad) * cos(inc2_rad) + 
         sin(inc1_rad) * sin(inc2_rad) * cos(azi_diff_rad)
     return degrees(dl_rad)
