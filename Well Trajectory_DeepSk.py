@@ -493,10 +493,6 @@ if st.session_state.results_calculated:
         height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
     )
 
-
-    if st.session_state.results_calculated:
-    # ... [previous code] ...
-
     # ============== TRAJECTORY VISUALIZATION ==============
     st.header("Trajectory Visualization")
     
