@@ -526,7 +526,7 @@ if st.session_state.results_calculated:
             
             ax1.set_xlabel('Displacement (m)', fontsize=10, fontweight='bold')
             ax1.set_ylabel('TVD (m)', fontsize=10, fontweight='bold')
-            ax1.set_title('VERTICAL VIEW (1:2 Ratio)', fontsize=12, fontweight='bold')
+            ax1.set_title('VERTICAL VIEW', fontsize=12, fontweight='bold')
             ax1.grid(True, linestyle=':', alpha=0.5)
             ax1.legend(loc='upper right', fontsize=9)
             
@@ -561,7 +561,7 @@ if st.session_state.results_calculated:
             
             ax2.set_xlabel('Easting Relative to Surface (E+)', fontsize=10, fontweight='bold')
             ax2.set_ylabel('Northing Relative to Surface (N+)', fontsize=10, fontweight='bold')
-            ax2.set_title('AZIMUTH VIEW (Relative to Surface)', fontsize=12, fontweight='bold')
+            ax2.set_title('AZIMUTH VIEW', fontsize=12, fontweight='bold')
             ax2.grid(True, linestyle=':', alpha=0.5)
             ax2.legend(loc='upper right', fontsize=9)
             
