@@ -427,72 +427,7 @@ if st.session_state.results_calculated:
             st.markdown(f"**Distance to target = <span class='distance-good'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
-    
-    
-if st.session_state.results_calculated:
-    # ... [kode sebelumnya tetap sama sampai display tabel] ...
-    
-    with col2:
-        # Add working copy button for summary table
-        csv = st.session_state.summary_df.to_csv(index=False)
-        st.download_button(
-            "📋 Copy Summary",
-            data=csv,
-            file_name="trajectory_summary.csv",
-            mime="text/csv",
-            key="download_summary"
-        )
-    
-    # Display the styled dataframe
-    st.dataframe(
-        st.session_state.summary_df.style.format({
-            'MD': '{:,.2f}',
-            'TVD': '{:,.2f}',
-            'Inc': '{:,.2f}',
-            'Azimuth': '{:,.2f}',
-            'N+': '{:,.2f}',
-            'E+': '{:,.2f}',
-            'Northing': '{:,.2f}',
-            'Easting': '{:,.2f}',
-            'Displacement': '{:,.2f}',
-            'TVDSS': '{:,.2f}',
-            'BUR': '{:,.2f}'
-        }),
-        use_container_width=True
-    )
-    
-    
-    # Detailed Survey Results
-    st.header("Detailed Survey Results")
-    
-    # Add working copy button for detailed table
-    csv = st.session_state.detailed_df.to_csv(index=False)
-    st.download_button(
-        "📋 Copy Detailed",
-        data=csv,
-        file_name="detailed_survey.csv",
-        mime="text/csv",
-        key="download_detailed"
-    )
-    
-    # Display the detailed survey dataframe
-    st.dataframe(
-        st.session_state.detailed_df.style.format({
-            'MD': '{:,.2f}',
-            'TVD': '{:,.2f}',
-            'Inc': '{:,.2f}',
-            'Azimuth': '{:,.2f}',
-            'N+': '{:,.2f}',
-            'E+': '{:,.2f}',
-            'Northing': '{:,.2f}',
-            'Easting': '{:,.2f}',
-            'Displacement': '{:,.2f}',
-            'TVDSS': '{:,.2f}',
-            'BUR': '{:,.2f}'
-        }),
-        use_container_width=True,
-        height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
-    )
+
 
     # ============== TRAJECTORY VISUALIZATION ==============
     st.header("Trajectory Visualization")
@@ -575,6 +510,73 @@ if st.session_state.results_calculated:
             
     except Exception as e:
         st.error(f"Error creating plots: {str(e)}")
+    
+if st.session_state.results_calculated:
+    # ... [kode sebelumnya tetap sama sampai display tabel] ...
+    
+    with col2:
+        # Add working copy button for summary table
+        csv = st.session_state.summary_df.to_csv(index=False)
+        st.download_button(
+            "📋 Copy Summary",
+            data=csv,
+            file_name="trajectory_summary.csv",
+            mime="text/csv",
+            key="download_summary"
+        )
+    
+    # Display the styled dataframe
+    st.dataframe(
+        st.session_state.summary_df.style.format({
+            'MD': '{:,.2f}',
+            'TVD': '{:,.2f}',
+            'Inc': '{:,.2f}',
+            'Azimuth': '{:,.2f}',
+            'N+': '{:,.2f}',
+            'E+': '{:,.2f}',
+            'Northing': '{:,.2f}',
+            'Easting': '{:,.2f}',
+            'Displacement': '{:,.2f}',
+            'TVDSS': '{:,.2f}',
+            'BUR': '{:,.2f}'
+        }),
+        use_container_width=True
+    )
+    
+    
+    # Detailed Survey Results
+    st.header("Detailed Survey Results")
+    
+    # Add working copy button for detailed table
+    csv = st.session_state.detailed_df.to_csv(index=False)
+    st.download_button(
+        "📋 Copy Detailed",
+        data=csv,
+        file_name="detailed_survey.csv",
+        mime="text/csv",
+        key="download_detailed"
+    )
+    
+    # Display the detailed survey dataframe
+    st.dataframe(
+        st.session_state.detailed_df.style.format({
+            'MD': '{:,.2f}',
+            'TVD': '{:,.2f}',
+            'Inc': '{:,.2f}',
+            'Azimuth': '{:,.2f}',
+            'N+': '{:,.2f}',
+            'E+': '{:,.2f}',
+            'Northing': '{:,.2f}',
+            'Easting': '{:,.2f}',
+            'Displacement': '{:,.2f}',
+            'TVDSS': '{:,.2f}',
+            'BUR': '{:,.2f}'
+        }),
+        use_container_width=True,
+        height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
+    )
+
+
 
               
 
