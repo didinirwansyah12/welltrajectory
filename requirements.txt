@@ -4,4 +4,3 @@ numpy
 plotly
 pyperclip
 matplotlib
-fpdf2==1.7.2
