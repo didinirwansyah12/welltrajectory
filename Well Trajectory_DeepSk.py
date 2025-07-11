@@ -575,8 +575,4 @@ if st.session_state.results_calculated:
     except Exception as e:
         st.error(f"Error creating plots: {str(e)}")
             
-            st.pyplot(fig2)
-            plt.close()
-            
-    except Exception as e:
-        st.error(f"Error creating plots: {str(e)}")
+
