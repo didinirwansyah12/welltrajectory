@@ -229,7 +229,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
 # Streamlit UI Configuration
 st.set_page_config(layout="wide")
 st.title("Well Trajectory Planner")
-st.markdown("**For J-Type Well with constant Azimuth. Minimum Curvature method.**")
+st.markdown("**by Rigsis Drilling Team. For J-Type Well with constant Azimuth. Minimum Curvature method.**")
 
 # Custom CSS for styling
 st.markdown("""
