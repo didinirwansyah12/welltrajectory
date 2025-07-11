@@ -515,7 +515,7 @@ if st.session_state.results_calculated:
             ax1 = fig1.add_subplot(111)
             
             ax1.plot(df_viz['Displacement'], df_viz['TVD'], 'b-', linewidth=2, label='Trajectory')
-            ax1.plot(target_disp, target_tvd, 'rx', markersize=5, label='Target')
+            ax1.plot(target_disp, target_tvd, 'rx', markersize=10, label='Target')
             
             # Set limits
             x_padding = max(df_viz['Displacement']) * 0.1
@@ -534,7 +534,7 @@ if st.session_state.results_calculated:
             plt.close()
         
         with col2:
-            # 2. Azimuth View Plot (1:1 aspect ratio) - Starting from (0,0)
+            # 2. Azimuth View Plot (1:1 aspect ratio) - Centered at (0,0)
             fig2 = plt.figure(figsize=(plot_width, plot_width))
             ax2 = fig2.add_subplot(111)
             
@@ -546,24 +546,34 @@ if st.session_state.results_calculated:
             target_nplus = st.session_state.target_northing - st.session_state.surface_northing
             ax2.plot(target_eplus, target_nplus, 'rx', markersize=10, label='Target')
             
-            # Calculate boundaries with 10% padding
-            max_eplus = max(max(df_viz['E+']), abs(min(df_viz['E+'])), abs(target_eplus))
-            max_nplus = max(max(df_viz['N+']), abs(min(df_viz['N+'])), abs(target_nplus))
-            plot_range = max(max_eplus, max_nplus) * 1.1  # 10% padding
+            # Calculate boundaries with 20% padding
+            max_eplus = max(abs(max(df_viz['E+'])), abs(min(df_viz['E+'])), abs(target_eplus))
+            max_nplus = max(abs(max(df_viz['N+'])), abs(min(df_viz['N+'])), abs(target_nplus))
+            plot_range = max(max_eplus, max_nplus) * 1.2
             
-            # Set axis limits (starting from 0,0)
-            ax2.set_xlim(0, plot_range)
-            ax2.set_ylim(0, plot_range)
+            # Set axis limits centered at (0,0)
+            ax2.set_xlim(-plot_range, plot_range)
+            ax2.set_ylim(-plot_range, plot_range)
             ax2.set_aspect('equal')
             
             # Add origin (0,0) marker
-            ax2.plot(0, 0, 'ko', markersize=5, label='Surface Location')
+            ax2.plot(0, 0, 'ko', markersize=8, label='Surface (0,0)')
             
-            ax2.set_xlabel('Easting Relative to Surface (E+)', fontsize=10, fontweight='bold')
-            ax2.set_ylabel('Northing Relative to Surface (N+)', fontsize=10, fontweight='bold')
+            # Add axis lines
+            ax2.axhline(0, color='gray', linestyle='--', linewidth=0.5)
+            ax2.axvline(0, color='gray', linestyle='--', linewidth=0.5)
+            
+            ax2.set_xlabel('E+', fontsize=10, fontweight='bold')
+            ax2.set_ylabel('N+', fontsize=10, fontweight='bold')
             ax2.set_title('AZIMUTH VIEW', fontsize=12, fontweight='bold')
             ax2.grid(True, linestyle=':', alpha=0.5)
-            ax2.legend(loc='upper right', fontsize=9)
+            ax2.legend(loc='best', fontsize=9)
+            
+            st.pyplot(fig2)
+            plt.close()
+            
+    except Exception as e:
+        st.error(f"Error creating plots: {str(e)}")
             
             st.pyplot(fig2)
             plt.close()
