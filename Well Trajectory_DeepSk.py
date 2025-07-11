@@ -507,7 +507,7 @@ if st.session_state.results_calculated:
         col1, col2 = st.columns(2)
         
         # Common width for both plots
-        plot_width = 4
+        plot_width = 6
         
         with col1:
             # 1. Vertical View Plot (1:2 aspect ratio)
