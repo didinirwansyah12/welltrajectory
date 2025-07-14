@@ -4,4 +4,6 @@ numpy
 plotly
 pyperclip
 matplotlib
-gspread oauth2client
+gspread==5.11.4
+oauth2client==4.1.3
+google-auth==2.23.4
