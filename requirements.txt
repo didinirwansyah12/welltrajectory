@@ -4,3 +4,4 @@ numpy
 plotly
 pyperclip
 matplotlib
+gspread oauth2client
