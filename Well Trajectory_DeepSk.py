@@ -3,6 +3,47 @@ import pandas as pd
 import numpy as np
 from math import sin, cos, tan, radians, degrees, sqrt, atan2, acos
 import matplotlib.pyplot as plt
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+from datetime import datetime
+
+# Fungsi untuk menyimpan ke Google Sheets
+def save_to_gsheets(data):
+    try:
+        # Scope dan auth
+        scope = ["https://spreadsheets.google.com/feeds", 
+                "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name("gsheets-key.json", scope)
+        client = gspread.authorize(creds)
+        
+        # Buka spreadsheet (ganti dengan URL/nama spreadsheet Anda)
+        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/...").sheet1
+        
+        # Format data
+        row = [
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            data["well_name"],
+            data["field_name"],
+            data["company"],
+            data["surface_northing"],
+            data["surface_easting"],
+            data["target_northing"],
+            data["target_easting"],
+            data["target_depth"],
+            data["kop"],
+            data["bur"],
+            data["target_inc"],
+            data["distance_to_target"],
+            str(data["summary_df"].to_dict("records")),  # Simpan sebagai string JSON
+            str(data["detailed_df"].to_dict("records"))
+        ]
+        
+        # Tambahkan baris baru
+        sheet.append_row(row)
+        return True
+    except Exception as e:
+        st.error(f"Gagal menyimpan: {str(e)}")
+        return False
 
 
 # Helper functions
@@ -576,7 +617,79 @@ if st.session_state.results_calculated:
         height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
     )
 
+if st.button("💾 Save to Google Sheets"):
+    calculation_data = {
+        "well_name": by_well,
+        "field_name": by_field,
+        "company": by_company,
+        "surface_northing": surface_northing,
+        "surface_easting": surface_easting,
+        "target_northing": target_northing,
+        "target_easting": target_easting,
+        "target_depth": target_depth,
+        "kop": kop,
+        "bur": bur if bur else 0,
+        "target_inc": target_inc if target_inc else 0,
+        "distance_to_target": st.session_state.distance_to_target,
+        "summary_df": st.session_state.summary_df,
+        "detailed_df": st.session_state.detailed_df
+    }
+    
+    if save_to_gsheets(calculation_data):
+        st.success("Data berhasil disimpan ke Google Sheets!")
+    else:
+        st.error("Gagal menyimpan data")
 
+def show_history():
+    st.title("Calculation History")
+    
+    try:
+        # Auth ke Google Sheets
+        scope = ["https://spreadsheets.google.com/feeds", 
+                "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name("gsheets-key.json", scope)
+        client = gspread.authorize(creds)
+        
+        # Baca data
+        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/...").sheet1
+        records = sheet.get_all_records()
+        
+        if not records:
+            st.warning("Belum ada data history")
+            return
+            
+        for idx, record in enumerate(records):
+            with st.expander(f"{record['well_name']} - {record['timestamp']}"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f"**Field:** {record['field_name']}")
+                    st.write(f"**KOP:** {record['kop']} m")
+                    st.write(f"**BUR:** {record['bur']} °/30m")
+                with col2:
+                    st.write(f"**Target Inc:** {record['target_inc']}°")
+                    st.write(f"**Distance to Target:** {record['distance_to_target']} m")
+                
+                if st.button("Load Data", key=f"load_{idx}"):
+                    # Update session state
+                    st.session_state.surface_northing = float(record["surface_northing"])
+                    st.session_state.surface_easting = float(record["surface_easting"])
+                    st.session_state.target_northing = float(record["target_northing"])
+                    st.session_state.target_easting = float(record["target_easting"])
+                    st.session_state.target_depth = float(record["target_depth"])
+                    st.session_state.kop = float(record["kop"])
+                    st.session_state.bur = float(record["bur"])
+                    st.session_state.target_inc = float(record["target_inc"])
+                    st.success("Data loaded! Kembali ke halaman Calculator")
+                    
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+
+# Tambahkan navigasi di sidebar
+page = st.sidebar.radio("Menu", ["Calculator", "History"])
+if page == "History":
+    show_history()
+else:
+    pass  # Tampilkan kalkulator utama
 
               
 
