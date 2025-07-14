@@ -1,40 +1,13 @@
-type = "service_account"
-project_id = "well-trajectory-465904"
-private_key_id = "486f2a2026012a063e3d73803f6672ac9ea8b5c2"
-private_key = """
------BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDL+MED46kEwYsL
-u7P6EcJlIOIHOtnPWBGQnxMbUmUvhpeiFWwn99RS8ds5I0uYWuXhohAv9pzd7AMO
-Qfqu7JM3ysRVnjhsiqBaljzKBwX0+AlgkWmqYeX+B//e2wkLtYGLtI38rVS0ZPxb
-ECMhyUFtQDW/wJ8vgeSjOBKZsx2LzbNZssb+Rdv+B7Trhw7WdjeiA6K2eqa9dnQy
-CYi2S4/EcaGCcleUXIthNhi29MH2i19MASg5bo33AoC+5kEwRCejfKd92Kn8GkH5
-JtWn7FOWuAcvcI9Lh97yqLX2RDo3g+zUKzLh65dFmz5QeP/TyoVg60kJ8C+pOgFR
-5xSWyxRRAgMBAAECggEABDvIQ8ymniznNinh8SuLsZ4mWtiPm0RcbvhCRQOnin48
-aPaRXV4BN+yBrJStNb8TPOToeZpghKGoqZPYgGd0IckRXKaRTL1u2Rp7rgTJzJ0W
-Ur0J6KmqBKUFXEqHDElq5Cut88PkOW9MJpa15/Zdp4cY5n84vptvU6zvA+YqE5P6
-q3hBtVIX0HtzrX9eNi9xmEhFxZ/zWmz5cr0i7IluMDKpEsAh7QUv3qm+kDBOKBs7
-g9A7u/E/Rln4xrUj79UnSjA8yN7Z8ApE86QrxFO35kEGFHm8TMEKiz9wy5PW1kjt
-8JL7zhBE1XS5wGuS+HW1q/+Z3H6KUX80xe5uQrb4EQKBgQDowY9WFfjhMOJ7wOgg
-8lH6PwHqPwXK1PPKhun7il3PN7ly9psBrc7OryZkJmu/XxtPqUcbCscXBc0zh92E
-BnTgHI+UPF/23rMYfiT+j93nLMHXPBguPXJAwpifq7gbWNhqTbtHxQqhmt6T3+ba
-X6b/MyaQUk12hR7Bd2etvsNDSQKBgQDgV1Ev9rA66qSO2riUTC/zGVnh492As4Rt
-Z3L84hZccycTOhOGzdTBqf6JVowM6YOccrxlIgxYq58j9xvQaXOaRWFLUbmqPihy
-GIIRuAebC7wQhWx2+3uFAjEbstUQfwOLpvaZSJ8b1FFySAviuupVWT0OJHswdApC
-spuYgGFAyQKBgDEHXNcoZ7Wf44Vn/D28bZJGJXQfdGvmcbgutSj8W4hj15ek5L/0
-ycR11qNwCHBWa11bbhP/MDLkUPZS31GJPqNawM/b6+cHwDgfklFhIsAoiGh7Syiq
-Xt/PXfD8bhqsm2HBH/sdQYELK2mA15MWZQoKz0vFWnXl0rW0Hk3WCjGpAoGBALAM
-NXzjJHaHje1AvJo7k2E84qj+bONDfMdx5+2E6jFQeDiBWbNusOftI/7YePzk/s/1
-xdvDNVccDr1lfGE3b21/xpMZpg5vysOGcgO/m9BTDBkW6wAP52WAS9NFqifQ1JJx
-ypCNSbbIDcYVvaYGMkAZ0GzZugZS+X5PtQSesjLpAoGAQ+vH2rdsApaHPIz/d2ik
-seVZm65Za8sO/fRFz/Fbhdl8vbaOQZXwCAbfAsG7yLSq929aqWZGl1dp4thA6shG
-kD5CsVnf/tcixmzxBGD2nDbobnsbQyTh4hf4p4Ja5W+twb+99R+q1MyDaGkNip5F
-/5pRnZBQ3pMGTtEC9f5j1wE=
------END PRIVATE KEY-----
-"""
-client_email = "well-trajectory@well-trajectory-465904.iam.gserviceaccount.com"
-client_id = "116246763455919339266"
-auth_uri = "https://accounts.google.com/o/oauth2/auth"
-token_uri = "https://oauth2.googleapis.com/token"
-auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
-client_x509_cert_url = "https://www.googleapis.com/robot/v1/metadata/x509/well-trajectory%40well-trajectory-465904.iam.gserviceaccount.com"
-universe_domain = "googleapis.com"
+{
+  "type": "service_account",
+  "project_id": "well-trajectory-465904",
+  "private_key_id": "486f2a2026012a063e3d73803f6672ac9ea8b5c2",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDL+MED46kEwYsL\nu7P6EcJlIOIHOtnPWBGQnxMbUmUvhpeiFWwn99RS8ds5I0uYWuXhohAv9pzd7AMO\nQfqu7JM3ysRVnjhsiqBaljzKBwX0+AlgkWmqYeX+B//e2wkLtYGLtI38rVS0ZPxb\nECMhyUFtQDW/wJ8vgeSjOBKZsx2LzbNZssb+Rdv+B7Trhw7WdjeiA6K2eqa9dnQy\nCYi2S4/EcaGCcleUXIthNhi29MH2i19MASg5bo33AoC+5kEwRCejfKd92Kn8GkH5\nJtWn7FOWuAcvcI9Lh97yqLX2RDo3g+zUKzLh65dFmz5QeP/TyoVg60kJ8C+pOgFR\n5xSWyxRRAgMBAAECggEABDvIQ8ymniznNinh8SuLsZ4mWtiPm0RcbvhCRQOnin48\naPaRXV4BN+yBrJStNb8TPOToeZpghKGoqZPYgGd0IckRXKaRTL1u2Rp7rgTJzJ0W\nUr0J6KmqBKUFXEqHDElq5Cut88PkOW9MJpa15/Zdp4cY5n84vptvU6zvA+YqE5P6\nq3hBtVIX0HtzrX9eNi9xmEhFxZ/zWmz5cr0i7IluMDKpEsAh7QUv3qm+kDBOKBs7\ng9A7u/E/Rln4xrUj79UnSjA8yN7Z8ApE86QrxFO35kEGFHm8TMEKiz9wy5PW1kjt\n8JL7zhBE1XS5wGuS+HW1q/+Z3H6KUX80xe5uQrb4EQKBgQDowY9WFfjhMOJ7wOgg\n8lH6PwHqPwXK1PPKhun7il3PN7ly9psBrc7OryZkJmu/XxtPqUcbCscXBc0zh92E\nBnTgHI+UPF/23rMYfiT+j93nLMHXPBguPXJAwpifq7gbWNhqTbtHxQqhmt6T3+ba\nX6b/MyaQUk12hR7Bd2etvsNDSQKBgQDgV1Ev9rA66qSO2riUTC/zGVnh492As4Rt\nZ3L84hZccycTOhOGzdTBqf6JVowM6YOccrxlIgxYq58j9xvQaXOaRWFLUbmqPihy\nGIIRuAebC7wQhWx2+3uFAjEbstUQfwOLpvaZSJ8b1FFySAviuupVWT0OJHswdApC\nspuYgGFAyQKBgDEHXNcoZ7Wf44Vn/D28bZJGJXQfdGvmcbgutSj8W4hj15ek5L/0\nycR11qNwCHBWa11bbhP/MDLkUPZS31GJPqNawM/b6+cHwDgfklFhIsAoiGh7Syiq\nXt/PXfD8bhqsm2HBH/sdQYELK2mA15MWZQoKz0vFWnXl0rW0Hk3WCjGpAoGBALAM\nNXzjJHaHje1AvJo7k2E84qj+bONDfMdx5+2E6jFQeDiBWbNusOftI/7YePzk/s/1\nxdvDNVccDr1lfGE3b21/xpMZpg5vysOGcgO/m9BTDBkW6wAP52WAS9NFqifQ1JJx\nypCNSbbIDcYVvaYGMkAZ0GzZugZS+X5PtQSesjLpAoGAQ+vH2rdsApaHPIz/d2ik\nseVZm65Za8sO/fRFz/Fbhdl8vbaOQZXwCAbfAsG7yLSq929aqWZGl1dp4thA6shG\nkD5CsVnf/tcixmzxBGD2nDbobnsbQyTh4hf4p4Ja5W+twb+99R+q1MyDaGkNip5F\n/5pRnZBQ3pMGTtEC9f5j1wE=\n-----END PRIVATE KEY-----\n",
+  "client_email": "well-trajectory@well-trajectory-465904.iam.gserviceaccount.com",
+  "client_id": "116246763455919339266",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/well-trajectory%40well-trajectory-465904.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
