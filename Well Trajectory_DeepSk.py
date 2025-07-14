@@ -17,7 +17,7 @@ def save_to_gsheets(data):
         client = gspread.authorize(creds)
         
         # Buka spreadsheet (ganti dengan URL/nama spreadsheet Anda)
-        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/...").sheet1
+        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1H1ezTfhejzScdRLCHPuM3nOBDfkUT6_pNEAvfFSchRc/edit?usp=sharing").sheet1
         
         # Format data
         row = [
