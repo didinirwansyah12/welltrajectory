@@ -1,11 +1,5 @@
 streamlit
 pandas
 numpy
-plotly
-pyperclip
 matplotlib
-gspread
-oauth2client
-google-auth
-io
-pickle
+xlsxwriter
