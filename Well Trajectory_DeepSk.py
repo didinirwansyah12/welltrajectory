@@ -3,48 +3,9 @@ import pandas as pd
 import numpy as np
 from math import sin, cos, tan, radians, degrees, sqrt, atan2, acos
 import matplotlib.pyplot as plt
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-
-# Fungsi untuk menyimpan ke Google Sheets
-def save_to_gsheets(data):
-    try:
-        # Scope dan auth
-        scope = ["https://spreadsheets.google.com/feeds", 
-                "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name("gsheets-key.json", scope)
-        client = gspread.authorize(creds)
-        
-        # Buka spreadsheet (ganti dengan URL/nama spreadsheet Anda)
-        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1H1ezTfhejzScdRLCHPuM3nOBDfkUT6_pNEAvfFSchRc/edit?usp=sharing").sheet1
-        
-        # Format data
-        row = [
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            data["well_name"],
-            data["field_name"],
-            data["company"],
-            data["surface_northing"],
-            data["surface_easting"],
-            data["target_northing"],
-            data["target_easting"],
-            data["target_depth"],
-            data["kop"],
-            data["bur"],
-            data["target_inc"],
-            data["distance_to_target"],
-            str(data["summary_df"].to_dict("records")),  # Simpan sebagai string JSON
-            str(data["detailed_df"].to_dict("records"))
-        ]
-        
-        # Tambahkan baris baru
-        sheet.append_row(row)
-        return True
-    except Exception as e:
-        st.error(f"Gagal menyimpan: {str(e)}")
-        return False
-
+import io
+import pickle
 
 # Helper functions
 def calculate_dogleg_angle(inc1, inc2, azi1, azi2):
@@ -93,13 +54,13 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
     # Initialize trajectory points
     points = []
     
-    # 1. RKB Point
+    # 1. RKB Point (vertical, azimuth = 0)
     points.append({
         'Parameter': 'RKB',
         'MD': 0.0,
         'TVD': 0.0,
         'Inc': 0.0,
-        'Azimuth': azimuth,
+        'Azimuth': 0.0,  # Azimuth diset 0 untuk bagian vertikal
         'N+': 0.0,
         'E+': 0.0,
         'Northing': surface_northing,
@@ -109,13 +70,13 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
         'BUR': 0.0
     })
     
-    # 2. KOP Point (vertical section)
+    # 2. KOP Point (vertical section, azimuth = 0)
     points.append({
         'Parameter': 'KOP',
         'MD': kop,
         'TVD': kop,
         'Inc': 0.0,
-        'Azimuth': azimuth,
+        'Azimuth': 0.0,  # Azimuth diset 0 untuk bagian vertikal
         'N+': 0.0,
         'E+': 0.0,
         'Northing': surface_northing,
@@ -145,7 +106,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
         'MD': eob_md,
         'TVD': tvd_eob,
         'Inc': inc,
-        'Azimuth': azimuth,
+        'Azimuth': azimuth,  # Azimuth mulai digunakan setelah KOP
         'N+': n_eob,
         'E+': e_eob,
         'Northing': surface_northing + n_eob,
@@ -230,6 +191,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
             n_rel = 0.0
             e_rel = 0.0
             bur_val = 0.0
+            azi_val = 0.0  # Azimuth = 0 untuk bagian vertikal
             parameter = "RKB" if md == 0 else "KOP" if md == kop else "Vertical"
         elif md <= eob_md:  # Build section
             alpha = (md - kop) / radius
@@ -239,6 +201,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
             n_rel = hd * cos(radians(azimuth))
             e_rel = hd * sin(radians(azimuth))
             bur_val = bur
+            azi_val = azimuth  # Azimuth mulai digunakan setelah KOP
             parameter = "EOB" if md == eob_md else "Build"
         else:  # Tangent section
             inc = target_inc
@@ -248,13 +211,14 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
             n_rel = hd * cos(radians(azimuth))
             e_rel = hd * sin(radians(azimuth))
             bur_val = 0.0
+            azi_val = azimuth
             parameter = "Target" if md == target_md else ("TD" if md == td_md else "Tangent")
         
         detailed_survey.append({
             'MD': md,
             'TVD': tvd,
             'Inc': inc,
-            'Azimuth': azimuth,
+            'Azimuth': azi_val,  # Gunakan azi_val yang sudah ditentukan
             'N+': n_rel,
             'E+': e_rel,
             'Northing': surface_northing + n_rel,
@@ -303,16 +267,34 @@ if 'results_calculated' not in st.session_state:
     st.session_state.results_calculated = False
     st.session_state.summary_df = None
     st.session_state.detailed_df = None
+    st.session_state.by_well = ""
+    st.session_state.by_field = ""
+    st.session_state.by_company = ""
+    st.session_state.design_version = ""
+
+# Load saved data
+st.header("Load Previous Calculation")
+uploaded_file = st.file_uploader("Upload saved trajectory data (.pkl)", type=["pkl"])
+if uploaded_file is not None:
+    try:
+        # Load data from pickle file
+        saved_data = pickle.load(uploaded_file)
+        st.session_state.update(saved_data)
+        st.success("Data successfully loaded!")
+    except Exception as e:
+        st.error(f"Error loading file: {str(e)}")
 
 # General Information
 st.header("General Information")
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
-    by_well = st.text_input("By Well")
+    by_well = st.text_input("By Well", value=st.session_state.by_well)
 with col2:
-    by_field = st.text_input("By Field")
+    by_field = st.text_input("By Field", value=st.session_state.by_field)
 with col3:
-    by_company = st.text_input("By Company")
+    by_company = st.text_input("By Company", value=st.session_state.by_company)
+with col4:
+    design_version = st.text_input("Design Version", value=st.session_state.design_version)
 
 # Surface Point
 st.header("Surface Point")
@@ -367,90 +349,120 @@ else:  # Inclination + BUR
         bur = st.number_input("BUR (deg/30m)", value=2.00, format="%.2f")
     kop = None
 
-if st.button("Calculate Trajectory"):
-    delta_tvd = (rkb_elevation - target_depth)
-    delta_h = sqrt((target_northing - surface_northing)**2 + 
-                 (target_easting - surface_easting)**2)
-    
-    if calculation_method == "KOP + Inclination":
-        # Exact solution for BUR
-        alpha_rad = radians(target_inc)
-        numerator = delta_h - (delta_tvd - kop) * tan(alpha_rad)
-        denominator = (1 - cos(alpha_rad)) - sin(alpha_rad) * tan(alpha_rad)
-        radius = numerator / denominator
-        bur = degrees(1/radius) * 30  # Convert to °/30m
+# Place Calculate Trajectory and Download Design Work buttons side by side
+col1, col2 = st.columns([1, 2])
+with col1:
+    if st.button("Calculate Trajectory"):
+        delta_tvd = (rkb_elevation - target_depth)
+        delta_h = sqrt((target_northing - surface_northing)**2 + 
+                    (target_easting - surface_easting)**2)
         
-        summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
-            surface_northing, surface_easting, rkb_elevation,
-            target_northing, target_easting, target_depth,
-            kop, bur, target_inc
+        if calculation_method == "KOP + Inclination":
+            # Exact solution for BUR
+            alpha_rad = radians(target_inc)
+            numerator = delta_h - (delta_tvd - kop) * tan(alpha_rad)
+            denominator = (1 - cos(alpha_rad)) - sin(alpha_rad) * tan(alpha_rad)
+            radius = numerator / denominator
+            bur = degrees(1/radius) * 30  # Convert to °/30m
+            
+            summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
+                surface_northing, surface_easting, rkb_elevation,
+                target_northing, target_easting, target_depth,
+                kop, bur, target_inc
+            )
+
+        elif calculation_method == "KOP + BUR":
+            # Solve α numerically
+            radius = 1 / (bur * (np.pi/180) / 30)
+            
+            def f(alpha):
+                alpha_rad = radians(alpha)
+                hd = radius * (1 - cos(alpha_rad))
+                tvd = kop + radius * sin(alpha_rad)
+                remaining_tvd = delta_tvd - tvd
+                hd += remaining_tvd * tan(alpha_rad)
+                return hd - delta_h
+            
+            # Bisection method
+            alpha_low, alpha_high = 0.1, 89.9
+            for _ in range(20):
+                alpha_mid = (alpha_low + alpha_high)/2
+                if f(alpha_mid) * f(alpha_low) < 0:
+                    alpha_high = alpha_mid
+                else:
+                    alpha_low = alpha_mid
+            inc = (alpha_low + alpha_high)/2
+            
+            summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
+                surface_northing, surface_easting, rkb_elevation,
+                target_northing, target_easting, target_depth,
+                kop, bur, inc
+            )
+
+        else:  # Inclination + BUR
+            radius = 1 / (bur * (np.pi/180) / 30)
+            alpha_rad = radians(target_inc)
+            
+            kop = delta_tvd - delta_h * (1/tan(alpha_rad)) - radius * ((1 - cos(alpha_rad))/sin(alpha_rad))
+            
+            summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
+                surface_northing, surface_easting, rkb_elevation,
+                target_northing, target_easting, target_depth,
+                kop, bur, target_inc
+            )
+        
+        # Store results in session state
+        st.session_state.update({
+            'results_calculated': True,
+            'summary_df': summary_df,
+            'detailed_df': detailed_df,
+            'distance_to_target': abs(delta_h - hd_target),
+            'surface_northing': surface_northing,
+            'surface_easting': surface_easting,
+            'target_northing': target_northing,
+            'target_easting': target_easting,
+            'target_depth': target_depth,
+            'rkb_elevation': rkb_elevation,
+            'by_well': by_well,
+            'by_field': by_field,
+            'by_company': by_company,
+            'design_version': design_version
+        })
+
+with col2:
+    if st.session_state.results_calculated:
+        # Buffer untuk menyimpan file Pickle
+        pickle_buffer = io.BytesIO()
+        pickle.dump({
+            'results_calculated': st.session_state.results_calculated,
+            'summary_df': st.session_state.summary_df,
+            'detailed_df': st.session_state.detailed_df,
+            'distance_to_target': st.session_state.distance_to_target,
+            'surface_northing': st.session_state.surface_northing,
+            'surface_easting': st.session_state.surface_easting,
+            'target_northing': st.session_state.target_northing,
+            'target_easting': st.session_state.target_easting,
+            'target_depth': st.session_state.target_depth,
+            'rkb_elevation': st.session_state.rkb_elevation,
+            'by_well': st.session_state.by_well,
+            'by_field': st.session_state.by_field,
+            'by_company': st.session_state.by_company,
+            'design_version': st.session_state.design_version
+        }, pickle_buffer)
+        # Tombol download untuk file Pickle
+        safe_well = st.session_state.by_well.replace(" ", "_").replace("/", "_").replace("\\", "_") if st.session_state.by_well else "UnknownWell"
+        safe_field = st.session_state.by_field.replace(" ", "_").replace("/", "_").replace("\\", "_") if st.session_state.by_field else "UnknownField"
+        safe_company = st.session_state.by_company.replace(" ", "_").replace("/", "_").replace("\\", "_") if st.session_state.by_company else "UnknownCompany"
+        safe_version = st.session_state.design_version.replace(" ", "_").replace("/", "_").replace("\\", "_") if st.session_state.design_version else "v1"
+        pickle_filename = f"{safe_well}_{safe_field}_{safe_company}_{safe_version}.pkl"
+        st.download_button(
+            label="Download Design Work (you can load the same work later)",
+            data=pickle_buffer,
+            file_name=pickle_filename,
+            mime="application/octet-stream",
+            key="download_design_work"
         )
 
-    elif calculation_method == "KOP + BUR":
-        # Solve α numerically
-        radius = 1 / (bur * (np.pi/180) / 30)
-        
-        def f(alpha):
-            alpha_rad = radians(alpha)
-            hd = radius * (1 - cos(alpha_rad))
-            tvd = kop + radius * sin(alpha_rad)
-            remaining_tvd = delta_tvd - tvd
-            hd += remaining_tvd * tan(alpha_rad)
-            return hd - delta_h
-        
-        # Bisection method
-        alpha_low, alpha_high = 0.1, 89.9
-        for _ in range(20):
-            alpha_mid = (alpha_low + alpha_high)/2
-            if f(alpha_mid) * f(alpha_low) < 0:
-                alpha_high = alpha_mid
-            else:
-                alpha_low = alpha_mid
-        inc = (alpha_low + alpha_high)/2
-        
-        summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
-            surface_northing, surface_easting, rkb_elevation,
-            target_northing, target_easting, target_depth,
-            kop, bur, inc
-        )
-
-    else:  # Inclination + BUR
-        radius = 1 / (bur * (np.pi/180) / 30)
-        alpha_rad = radians(target_inc)
-        
-        kop = delta_tvd - delta_h * (1/tan(alpha_rad)) - radius * ((1 - cos(alpha_rad))/sin(alpha_rad))
-        
-        summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
-            surface_northing, surface_easting, rkb_elevation,
-            target_northing, target_easting, target_depth,
-            kop, bur, target_inc
-        )
-    
-    # Store results in session state
-    st.session_state.results_calculated = True
-    st.session_state.summary_df = summary_df
-    st.session_state.detailed_df = detailed_df
-    st.session_state.distance_to_target = abs(delta_h - hd_target)
-    # Di dalam blok if st.button("Calculate Trajectory"): setelah store results
-    st.session_state.surface_northing = surface_northing
-    st.session_state.surface_easting = surface_easting
-    st.session_state.target_northing = target_northing
-    st.session_state.target_easting = target_easting
-    st.session_state.target_depth = target_depth
-    st.session_state.rkb_elevation = rkb_elevation
-
-    st.session_state.update({
-        'results_calculated': True,
-        'summary_df': summary_df,
-        'detailed_df': detailed_df,
-        'distance_to_target': abs(delta_h - hd_target),
-        'surface_northing': surface_northing,
-        'surface_easting': surface_easting,
-        'target_northing': target_northing,
-        'target_easting': target_easting,
-        'target_depth': target_depth,
-        'rkb_elevation': rkb_elevation  # Ini yang paling penting
-    })
 # Display results if they exist
 if st.session_state.results_calculated:
     # Calculate distance to target
@@ -459,7 +471,7 @@ if st.session_state.results_calculated:
     # Format the output DataFrame with proper number formatting
     st.header("Trajectory Results Summary")
     
-    # Create columns for distance display and copy button
+    # Create columns for distance display and download button
     col1, col2 = st.columns([3, 1])
     
     with col1:
@@ -468,21 +480,20 @@ if st.session_state.results_calculated:
             st.markdown(f"**Distance to target = <span class='distance-good'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
         else:
             st.markdown(f"**Distance to target = <span class='distance-bad'>{distance_to_target:,.2f} m</span>**", unsafe_allow_html=True)
-
-
-       
-if st.session_state.results_calculated:
-    # ... [kode sebelumnya tetap sama sampai display tabel] ...
     
     with col2:
-        # Add working copy button for summary table
-        csv = st.session_state.summary_df.to_csv(index=False)
+        # Buffer untuk menyimpan file Excel
+        buffer = io.BytesIO()
+        # Konversi DataFrame ke Excel
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+            st.session_state.summary_df.to_excel(writer, index=False, sheet_name='Summary')
+        # Tombol download untuk file Excel
         st.download_button(
-            "📋 Copy Summary",
-            data=csv,
-            file_name="trajectory_summary.csv",
-            mime="text/csv",
-            key="download_summary"
+            label="📥 Download Excel Sheet (Summary)",
+            data=buffer,
+            file_name="trajectory_summary.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_summary_excel"
         )
     
     # Display the styled dataframe
@@ -503,7 +514,7 @@ if st.session_state.results_calculated:
         use_container_width=True
     )
     
-# ============== TRAJECTORY VISUALIZATION ==============
+    # Trajectory Visualization
     st.header("Trajectory Visualization")
     
     try:
@@ -588,15 +599,23 @@ if st.session_state.results_calculated:
     # Detailed Survey Results
     st.header("Detailed Survey Results")
     
-    # Add working copy button for detailed table
-    csv = st.session_state.detailed_df.to_csv(index=False)
-    st.download_button(
-        "📋 Copy Detailed",
-        data=csv,
-        file_name="detailed_survey.csv",
-        mime="text/csv",
-        key="download_detailed"
-    )
+    # Create column for download button
+    col1, col2 = st.columns([3, 1])
+    
+    with col2:
+        # Buffer untuk menyimpan file Excel
+        buffer = io.BytesIO()
+        # Konversi DataFrame ke Excel
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+            st.session_state.detailed_df.to_excel(writer, index=False, sheet_name='Detailed')
+        # Tombol download untuk file Excel
+        st.download_button(
+            label="📥 Download Excel Sheet (Detailed)",
+            data=buffer,
+            file_name="detailed_survey.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_detailed_excel"
+        )
     
     # Display the detailed survey dataframe
     st.dataframe(
@@ -616,80 +635,3 @@ if st.session_state.results_calculated:
         use_container_width=True,
         height=min(600, (len(st.session_state.detailed_df) + 1) * 35 + 3)
     )
-
-if st.button("💾 Save to Google Sheets"):
-    calculation_data = {
-        "well_name": by_well,
-        "field_name": by_field,
-        "company": by_company,
-        "surface_northing": surface_northing,
-        "surface_easting": surface_easting,
-        "target_northing": target_northing,
-        "target_easting": target_easting,
-        "target_depth": target_depth,
-        "kop": kop,
-        "bur": bur if bur else 0,
-        "target_inc": target_inc if target_inc else 0,
-        "distance_to_target": st.session_state.distance_to_target,
-        "summary_df": st.session_state.summary_df,
-        "detailed_df": st.session_state.detailed_df
-    }
-    
-    if save_to_gsheets(calculation_data):
-        st.success("Data berhasil disimpan ke Google Sheets!")
-    else:
-        st.error("Gagal menyimpan data")
-
-def show_history():
-    st.title("Calculation History")
-    
-    try:
-        # Auth ke Google Sheets
-        scope = ["https://spreadsheets.google.com/feeds", 
-                "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name("gsheets-key.json", scope)
-        client = gspread.authorize(creds)
-        
-        # Baca data
-        sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/...").sheet1
-        records = sheet.get_all_records()
-        
-        if not records:
-            st.warning("Belum ada data history")
-            return
-            
-        for idx, record in enumerate(records):
-            with st.expander(f"{record['well_name']} - {record['timestamp']}"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write(f"**Field:** {record['field_name']}")
-                    st.write(f"**KOP:** {record['kop']} m")
-                    st.write(f"**BUR:** {record['bur']} °/30m")
-                with col2:
-                    st.write(f"**Target Inc:** {record['target_inc']}°")
-                    st.write(f"**Distance to Target:** {record['distance_to_target']} m")
-                
-                if st.button("Load Data", key=f"load_{idx}"):
-                    # Update session state
-                    st.session_state.surface_northing = float(record["surface_northing"])
-                    st.session_state.surface_easting = float(record["surface_easting"])
-                    st.session_state.target_northing = float(record["target_northing"])
-                    st.session_state.target_easting = float(record["target_easting"])
-                    st.session_state.target_depth = float(record["target_depth"])
-                    st.session_state.kop = float(record["kop"])
-                    st.session_state.bur = float(record["bur"])
-                    st.session_state.target_inc = float(record["target_inc"])
-                    st.success("Data loaded! Kembali ke halaman Calculator")
-                    
-    except Exception as e:
-        st.error(f"Error: {str(e)}")
-
-# Tambahkan navigasi di sidebar
-page = st.sidebar.radio("Menu", ["Calculator", "History"])
-if page == "History":
-    show_history()
-else:
-    pass  # Tampilkan kalkulator utama
-
-              
-
