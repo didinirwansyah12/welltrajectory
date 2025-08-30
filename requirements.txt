@@ -7,3 +7,5 @@ matplotlib
 gspread
 oauth2client
 google-auth
+io
+pickle
