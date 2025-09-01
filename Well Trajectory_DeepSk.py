@@ -39,7 +39,7 @@ def minimum_curvature(inc1, inc2, azi1, azi2, md):
 
 def calculate_trajectory(surface_northing, surface_easting, rkb_elevation, 
                          target_northing, target_easting, target_depth, 
-                         kop, bur, target_inc=None):
+                         kop, bur, target_inc=None, td_mode="nearest", custom_td=0.0):
     """Main trajectory calculation function"""
     # Calculate horizontal displacement and azimuth
     delta_n = target_northing - surface_northing
@@ -142,10 +142,20 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
         'BUR': 0.0
     })
     
-    # 5. TD (round up to nearest 30m)
-    td_md = ((int(target_md) // 30) + 1) * 30
-    if td_md <= target_md:
-        td_md += 30
+    # 5. TD (based on td_mode)
+    td_adjusted = False
+    if td_mode == "nearest":
+        td_md = ((int(target_md) // 30) + 1) * 30
+        if td_md <= target_md:
+            td_md += 30
+    else:  # custom
+        if custom_td >= target_md:
+            td_md = custom_td
+        else:
+            td_md = ((int(target_md) // 30) + 1) * 30
+            if td_md <= target_md:
+                td_md += 30
+            td_adjusted = True
     
     delta_md_td = td_md - target_md
     delta_tvd_td = delta_md_td * cos(radians(inc))
@@ -172,7 +182,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
         'BUR': 0.0
     })
     
-    # Generate detailed survey at 30m intervals including KOP, EOB, and Target
+    # Generate detailed survey at 30m intervals including KOP, EOB, Target, and TD
     detailed_survey = []
     
     # Create all possible MD points (30m intervals + key points)
@@ -229,7 +239,7 @@ def calculate_trajectory(surface_northing, surface_easting, rkb_elevation,
             'Parameter': parameter
         })
     
-    return pd.DataFrame(points), pd.DataFrame(detailed_survey), hd_target, delta_h
+    return pd.DataFrame(points), pd.DataFrame(detailed_survey), hd_target, delta_h, td_adjusted
 
 # Streamlit UI Configuration
 st.set_page_config(layout="wide")
@@ -259,6 +269,10 @@ div[data-testid="stDataFrame"] {
     margin-top: -40px;
     margin-right: 10px;
 }
+.td-warning {
+    color: red;
+    font-size: 12px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -271,6 +285,8 @@ if 'results_calculated' not in st.session_state:
     st.session_state.by_field = ""
     st.session_state.by_company = ""
     st.session_state.design_version = ""
+    st.session_state.td_mode = "nearest"
+    st.session_state.custom_td = 0.0
 
 # Load saved data
 st.header("Load Previous Calculation")
@@ -279,6 +295,13 @@ if uploaded_file is not None:
     try:
         # Load data from pickle file
         saved_data = pickle.load(uploaded_file)
+        # Set default TD settings for backward compatibility
+        if 'td_mode' not in saved_data:
+            saved_data['td_mode'] = "nearest"
+        if 'custom_td' not in saved_data:
+            saved_data['custom_td'] = 0.0
+        if 'td_adjusted' not in saved_data:
+            saved_data['td_adjusted'] = False
         st.session_state.update(saved_data)
         st.success("Data successfully loaded!")
     except Exception as e:
@@ -349,6 +372,23 @@ else:  # Inclination + BUR
         bur = st.number_input("BUR (deg/30m)", value=2.00, format="%.2f")
     kop = None
 
+# TD Mode Selection
+st.subheader("Total Depth (TD) Settings")
+td_mode = st.radio("TD Mode", 
+                   ["Automatic Standdown Depth (Nearest 30mMD Multiple after Target Depth)", "Custom Depth"], 
+                   index=0 if st.session_state.td_mode == "nearest" else 1)
+if td_mode == "Custom Depth":
+    custom_td = st.number_input("Custom TD (mMD)", 
+                               min_value=0.0, 
+                               value=st.session_state.custom_td if st.session_state.custom_td > 0 else 0.0,
+                               format="%.2f")
+else:
+    custom_td = 0.0
+
+# Update session state for TD settings
+st.session_state.td_mode = "nearest" if td_mode == "Automatic Standdown Depth (Nearest 30mMD Multiple after Target Depth)" else "custom"
+st.session_state.custom_td = custom_td
+
 # Place Calculate Trajectory and Download Design Work buttons side by side
 col1, col2 = st.columns([1, 2])
 with col1:
@@ -365,10 +405,10 @@ with col1:
             radius = numerator / denominator
             bur = degrees(1/radius) * 30  # Convert to °/30m
             
-            summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
+            summary_df, detailed_df, hd_target, delta_h, td_adjusted = calculate_trajectory(
                 surface_northing, surface_easting, rkb_elevation,
                 target_northing, target_easting, target_depth,
-                kop, bur, target_inc
+                kop, bur, target_inc, st.session_state.td_mode, custom_td
             )
 
         elif calculation_method == "KOP + BUR":
@@ -393,10 +433,10 @@ with col1:
                     alpha_low = alpha_mid
             inc = (alpha_low + alpha_high)/2
             
-            summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
+            summary_df, detailed_df, hd_target, delta_h, td_adjusted = calculate_trajectory(
                 surface_northing, surface_easting, rkb_elevation,
                 target_northing, target_easting, target_depth,
-                kop, bur, inc
+                kop, bur, inc, st.session_state.td_mode, custom_td
             )
 
         else:  # Inclination + BUR
@@ -405,10 +445,10 @@ with col1:
             
             kop = delta_tvd - delta_h * (1/tan(alpha_rad)) - radius * ((1 - cos(alpha_rad))/sin(alpha_rad))
             
-            summary_df, detailed_df, hd_target, delta_h = calculate_trajectory(
+            summary_df, detailed_df, hd_target, delta_h, td_adjusted = calculate_trajectory(
                 surface_northing, surface_easting, rkb_elevation,
                 target_northing, target_easting, target_depth,
-                kop, bur, target_inc
+                kop, bur, target_inc, st.session_state.td_mode, custom_td
             )
         
         # Store results in session state
@@ -426,7 +466,10 @@ with col1:
             'by_well': by_well,
             'by_field': by_field,
             'by_company': by_company,
-            'design_version': design_version
+            'design_version': design_version,
+            'td_mode': st.session_state.td_mode,
+            'custom_td': custom_td,
+            'td_adjusted': td_adjusted
         })
 
 with col2:
@@ -447,7 +490,10 @@ with col2:
             'by_well': st.session_state.by_well,
             'by_field': st.session_state.by_field,
             'by_company': st.session_state.by_company,
-            'design_version': st.session_state.design_version
+            'design_version': st.session_state.design_version,
+            'td_mode': st.session_state.td_mode,
+            'custom_td': st.session_state.custom_td,
+            'td_adjusted': st.session_state.td_adjusted
         }, pickle_buffer)
         # Tombol download untuk file Pickle
         safe_well = st.session_state.by_well.replace(" ", "_").replace("/", "_").replace("\\", "_") if st.session_state.by_well else "UnknownWell"
@@ -513,6 +559,14 @@ if st.session_state.results_calculated:
         }),
         use_container_width=True
     )
+    
+    # Display warning if TD was adjusted
+    if st.session_state.td_adjusted:
+        st.markdown(
+            "<p class='td-warning'>Your proposed TD is below Target MD (based on calculation). "
+            "Therefore, the TD is set to be standdown depth.</p>",
+            unsafe_allow_html=True
+        )
     
     # Trajectory Visualization
     st.header("Trajectory Visualization")
